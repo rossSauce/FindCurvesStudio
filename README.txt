@@ -5,7 +5,7 @@ see http://commonproblems.readthedocs.io/en/latest/
 
 
 If you prefer wxPython, the wxPython version of this code
-is at: https://github.com/zunzun/wxPythonFit
+is at: https://bitbucket.org/zunzuncode/wxPythonFit
 
 
 Step 1: Install Python 3, tk, scipy and matplotlib
@@ -50,7 +50,7 @@ You are now curve and surface fitting data using tkinter!
 
 You may also be interested in the django version, which
 includes PDF files, surface rotations and "function finding".
-It is available at https://github.com/zunzun/zunzunsite3
+It is available at https://bitbucket.org/zunzuncode/zunzunsite3
 
 
 Prior to the invention of electronic calculation, only manual methods

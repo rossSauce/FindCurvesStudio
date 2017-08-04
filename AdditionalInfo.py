@@ -3,15 +3,15 @@ URL for animated "Common Problems In Curve Fitting":
 http://commonproblems.readthedocs.io/
 
 URL for source code of this computer program:
-https://github.com/zunzun/tkInterFit
+https://bitbucket.org/zunzuncode/tkInterFit
 
 URL for web version of this code, which generates \
 PDF files and animated 3D surface rotations:
-https://github.com/zunzun/zunzunsite3
+https://bitbucket.org/zunzuncode/zunzunsite3
 
 URL for the pyeq3 fitting library, which has hundreds \
 of known 2D and 3D equations:
-https://github.com/zunzun/pyeq3
+https://bitbucket.org/zunzuncode/pyeq3
 
 
 '''
@@ -46,7 +46,7 @@ writing surface fitting software. I began to do considerable international work.
 
 This finally led to the development of my Python fitting libraries, and \
 this example tkinter curve and surface fitter. I also have Python 2 and 3 \
-wxPython and django versions on GitHub.
+wxPython and django versions on Bitbucket.
 
 James
 '''
