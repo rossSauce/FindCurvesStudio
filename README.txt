@@ -1,7 +1,7 @@
 Welcome to tkInterFit, an example of creating a
 cross-platform curve and surface fitting application 
 using tkinter and the pyeq3 fitting library.
-see http://commonproblems.readthedocs.io/en/latest/
+see http://zunzun/com/CommonProblems/
 
 
 If you prefer wxPython, the wxPython version of this code

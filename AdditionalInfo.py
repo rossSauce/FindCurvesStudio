@@ -1,6 +1,6 @@
 links = '''
 URL for animated "Common Problems In Curve Fitting":
-http://commonproblems.readthedocs.io/
+http://zunzun.com/CommonProblems/
 
 URL for source code of this computer program:
 https://bitbucket.org/zunzuncode/tkInterFit
