@@ -362,9 +362,9 @@ def SurfacePlot(parent, equation):
     Z = equation.CalculateModelPredictions(equation.solvedCoefficients, equation.dataCache.allDataCacheDictionary)
     equation.dataCache = tempcache# restore the original data cache
 
-    axes.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap=cm.coolwarm, linewidth=1, antialiased=True)
+    axes.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap=cm.coolwarm, linewidth=1, antialiased=True, alpha=0.75)
 
-    axes.scatter(x_data, y_data, z_data)
+    axes.scatter(x_data, y_data, z_data, depthshade=False, color='k')
 
     axes.set_title('Surface Plot (click-drag with mouse)') # add a title for surface plot
     axes.set_xlabel('X Data') # X axis data label
@@ -420,7 +420,7 @@ def ScatterPlot(parent, equation):
     y_data = equation.dataCache.allDataCacheDictionary['IndependentData'][1]
     z_data = equation.dataCache.allDataCacheDictionary['DependentData']
             
-    axes.scatter(x_data, y_data, z_data)
+    axes.scatter(x_data, y_data, z_data, depthshade=False, color='k')
 
     axes.set_title('Scatter Plot (click-drag with mouse)')
     axes.set_xlabel('X Data')
