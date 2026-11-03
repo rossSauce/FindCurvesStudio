@@ -17,8 +17,9 @@ a = Analysis(
         'matplotlib.backends.backend_tkagg',
         'mpl_toolkits.mplot3d',
         'scipy.stats',
-        # pdfCode is imported lazily, only when saving a PDF
+        # these are imported lazily, only when saving a PDF
         'pdfCode',
+        'FunctionFinderPDF',
         'reportlab.graphics.barcode.common',
         'reportlab.graphics.barcode.code128',
         'reportlab.graphics.barcode.code93',

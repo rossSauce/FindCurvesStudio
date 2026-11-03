@@ -5,12 +5,15 @@ import matplotlib # ensure this dependency imports for later use in fitting resu
 
 import tkinter as tk
 import tkinter.ttk
+from tkinter import ttk
 from tkinter import messagebox as tk_mbox
 import tkinter.scrolledtext as tk_stxt
 
 import DataForControls as dfc
 import FittingThread
 import FittingResultsViewer
+import FunctionFinder
+import FunctionFinderResults
 
 
 class InterfaceFrame(tk.Frame):
@@ -155,7 +158,28 @@ class InterfaceFrame(tk.Frame):
         row, col = (11, 0)
         l = tk.Label(self, text=" ")
         l.grid(column=col, row=row)
-        
+
+        # ROW 12 - function finder, which fits the data to all standard equations
+        self.maxCoefficients = {2: tk.IntVar(value=FunctionFinder.defaultMaxCoefficients[2]),
+                                3: tk.IntVar(value=FunctionFinder.defaultMaxCoefficients[3])}
+        self.exactCoefficientCount = {2: tk.BooleanVar(value=False), 3: tk.BooleanVar(value=False)}
+        self.buttonFunctionFinder = {}
+        for dim, col in [(2, 1), (3, 3)]:
+            f = tk.Frame(self)
+            f.grid(column=col, row=12)
+            tk.Label(f, text="Coefficients:").pack(side=tk.LEFT)
+            tk.Spinbox(f, from_=1, to=15, width=3, textvariable=self.maxCoefficients[dim], state='readonly').pack(side=tk.LEFT)
+            tk.Radiobutton(f, text="maximum", variable=self.exactCoefficientCount[dim], value=False).pack(side=tk.LEFT)
+            tk.Radiobutton(f, text="exact", variable=self.exactCoefficientCount[dim], value=True).pack(side=tk.LEFT)
+            b = tk.Button(f, text="Function Finder %dD" % dim, command=lambda d=dim: self.OnFunctionFinder(d))
+            b.pack(side=tk.LEFT, padx=(8, 0))
+            self.buttonFunctionFinder[dim] = b
+
+        # ROW 13 - empty label as visual buffer
+        row, col = (13, 0)
+        l = tk.Label(self, text=" ")
+        l.grid(column=col, row=row)
+
         # the fitting thread communicates with the GUI only through self.queue,
         # since tkinter widgets must not be accessed from other threads
 
@@ -198,8 +222,7 @@ class InterfaceFrame(tk.Frame):
             return
         
         # Now the status dialog is used. Disable fitting buttons until thread completes
-        self.buttonFit_2D.config(state=tk.DISABLED)
-        self.buttonFit_3D.config(state=tk.DISABLED)
+        self.SetFittingButtonsState(tk.DISABLED)
         
         # create simple top-level text dialog to display status as fitting progresses
         # when the fitting thread completes, it will close the status box
@@ -250,8 +273,7 @@ class InterfaceFrame(tk.Frame):
             return
         
         # Now the status dialog is used. Disable fitting buttons until thread completes
-        self.buttonFit_2D.config(state=tk.DISABLED)
-        self.buttonFit_3D.config(state=tk.DISABLED)
+        self.SetFittingButtonsState(tk.DISABLED)
         
         # create simple top-level text dialog to display status as fitting progresses
         # when the fitting thread completes, it will close the status box
@@ -291,8 +313,7 @@ class InterfaceFrame(tk.Frame):
 
             # the fitting thread is finished - re-enable fitting buttons
             # and destroy the now-unused status box
-            self.buttonFit_2D.config(state=tk.NORMAL)
-            self.buttonFit_3D.config(state=tk.NORMAL)
+            self.SetFittingButtonsState(tk.NORMAL)
             self.statusBox.destroy()
 
             if isinstance(data, BaseException):
@@ -300,6 +321,104 @@ class InterfaceFrame(tk.Frame):
             else: # the queue data is now the fitted equation, view fitting results
                 self.ShowResults(data)
             return
+
+
+    def SetFittingButtonsState(self, state):
+        self.buttonFit_2D.config(state=state)
+        self.buttonFit_3D.config(state=state)
+        for button in self.buttonFunctionFinder.values():
+            button.config(state=state)
+
+
+    def OnFunctionFinder(self, dim):
+        if dim == 2:
+            textData = self.text_2D.get("1.0", tk.END)
+            fittingTargetSelection = dfc.fittingTargetList[self.fittingTargetSelect_2D.get()]
+        else:
+            textData = self.text_3D.get("1.0", tk.END)
+            fittingTargetSelection = dfc.fittingTargetList[self.fittingTargetSelect_3D.get()]
+        maxCoefficients = self.maxCoefficients[dim].get()
+        exactCount = self.exactCoefficientCount[dim].get()
+
+        # the GUI's fitting target string contains what we need - extract it
+        fittingTarget = fittingTargetSelection.split('(')[1].split(')')[0]
+
+        # check that the text contains usable data before starting
+        try:
+            dataCount = FunctionFinder.CountDataPoints(dim, textData)
+        except Exception:
+            dataCount = 0
+        if dataCount < 2:
+            tk_mbox.showerror("Error", "Could not find at least two %dD data points in the text." % dim)
+            return
+
+        self.SetFittingButtonsState(tk.DISABLED)
+        try:
+            self.functionFinderRun = FunctionFinder.FunctionFinderRun(dim, fittingTarget, textData, maxCoefficients, exactCount)
+        except Exception as e:
+            self.SetFittingButtonsState(tk.NORMAL)
+            tk_mbox.showerror("Error", "Could not start the function finder:\n\n" + repr(e))
+            return
+
+        # status dialog with progress bar and cancel button
+        self.ffStatus = tk.Toplevel(self)
+        self.ffStatus.title("Function Finder %dD" % dim)
+        self.ffStatus.resizable(False, False)
+        self.ffStatus.protocol("WM_DELETE_WINDOW", self.OnFunctionFinderCancel)
+        tk.Label(self.ffStatus, text="Fitting %d equations with %s %d coefficients to %d data points,\nusing %s" % (
+                     self.functionFinderRun.total, 'exactly' if exactCount else 'up to', maxCoefficients,
+                     dataCount, fittingTargetSelection),
+                 justify=tk.LEFT).pack(padx=12, pady=(12, 4), anchor=tk.W)
+        self.ffStatus.progress = ttk.Progressbar(self.ffStatus, length=460, mode='determinate',
+                                                 maximum=max(self.functionFinderRun.total, 1))
+        self.ffStatus.progress.pack(padx=12, pady=4)
+        self.ffStatus.countLabel = tk.Label(self.ffStatus, text="Starting...", anchor=tk.W, width=70)
+        self.ffStatus.countLabel.pack(padx=12, anchor=tk.W)
+        self.ffStatus.bestLabel = tk.Label(self.ffStatus, text="", anchor=tk.W, width=70)
+        self.ffStatus.bestLabel.pack(padx=12, anchor=tk.W)
+        tk.Button(self.ffStatus, text="Cancel (show results so far)",
+                  command=self.OnFunctionFinderCancel).pack(pady=(8, 12))
+
+        self.ffStatus.update_idletasks()
+        width = self.ffStatus.winfo_width()
+        height = self.ffStatus.winfo_height()
+        x = (self.ffStatus.winfo_screenwidth() // 2) - (width // 2) # integer division
+        y = (self.ffStatus.winfo_screenheight() // 2) - (height // 2) # integer division
+        self.ffStatus.geometry('{}x{}+{}+{}'.format(width, height, x, y))
+
+        self.after(200, self.FunctionFinderPoll)
+
+
+    def FunctionFinderPoll(self):
+        run = self.functionFinderRun
+        done = run.Poll()
+
+        if not done:
+            self.ffStatus.progress['value'] = run.completed
+            self.ffStatus.countLabel.config(text="%d of %d complete    %d fitted, %d skipped, %d failed" % (
+                run.completed, run.total, len(run.fitted), len(run.skipped), len(run.failed)))
+            best = run.BestSoFar()
+            if best is not None:
+                self.ffStatus.bestLabel.config(text="Best so far: %s (%s = %.6E)" % (
+                    best.GetDisplayName(), run.fittingTarget, best.fittingTargetValue))
+            self.after(200, self.FunctionFinderPoll)
+            return
+
+        self.FunctionFinderFinished()
+
+
+    def OnFunctionFinderCancel(self):
+        self.functionFinderRun.Cancel() # FunctionFinderPoll will then finish up
+
+
+    def FunctionFinderFinished(self):
+        self.ffStatus.destroy()
+        self.SetFittingButtonsState(tk.NORMAL)
+        window = FunctionFinderResults.FunctionFinderResultsWindow(self, self.functionFinderRun, self.ShowResults)
+        window.update_idletasks()
+        x = max(0, (window.winfo_screenwidth() - window.winfo_width()) // 2)
+        y = max(0, (window.winfo_screenheight() - window.winfo_height()) // 3)
+        window.geometry('+{}+{}'.format(x, y))
 
 
     def ShowResults(self, equation):

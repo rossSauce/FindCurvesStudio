@@ -4,6 +4,10 @@ Birmingham, AL 35235 USA
 email: zunzun@zunzun.com
 All rights reserved.
 
+Copyright (C) 2026 Ross Moffett (current maintainer)
+email: findcurves@gmail.com
+All rights reserved.
+
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions
 are met:

@@ -1,12 +1,15 @@
 links = '''
+tkInterFit is maintained by Ross Moffett.
+Questions, comments and suggestions: findcurves@gmail.com
+
 URL for animated "Common Problems In Curve Fitting":
 http://zunzun.com/CommonProblems/
 
-URL for source code of this computer program:
+URL for the original tkInterFit source code by James R. Phillips:
 https://bitbucket.org/zunzuncode/tkInterFit
 
-URL for web version of this code, which generates \
-PDF files and animated 3D surface rotations:
+URL for the original web version of this code (zunzunsite3), \
+whose function finder this program's function finder is based on:
 https://bitbucket.org/zunzuncode/zunzunsite3
 
 URL for the pyeq3 fitting library, which has hundreds \
@@ -17,6 +20,13 @@ https://bitbucket.org/zunzuncode/pyeq3
 '''
 
 author = '''
+tkInterFit is now maintained by Ross Moffett. Please send any questions, \
+comments or suggestions to findcurves@gmail.com
+
+tkInterFit was originally written by James R. Phillips, who is no longer \
+maintaining it. His history of the program follows.
+
+
 This is James Phillips, author of tkInterFit. My background is in \
 nuclear engineering and industrial radiation physics, as I started \
 working in the U.S. Navy as a submarine nuclear reactor operator \
@@ -89,16 +99,12 @@ choosing the one in the code, a genetic algorithm named \
 
 
 I hope you find this code useful, and to that end I have sprinkled \
-explanatory comments throughout the code.  If you have any questions, \
-comments or suggestions please e-mail me directly at zunzun@zunzun.com \
-or by posting to the user group at the URL
-https://groups.google.com/forum/#!forum/zunzun_dot_com
+explanatory comments throughout the code.
 
-I will be glad to help you.
+James R. Phillips, original author of tkInterFit
 
-James R. Phillips
-2548 Vera Cruz Drive
-Birmingham, AL 35235 USA
 
-email: zunzun@zunzun.com
+tkInterFit is now maintained by Ross Moffett. If you have any \
+questions, comments or suggestions please e-mail \
+findcurves@gmail.com
 '''

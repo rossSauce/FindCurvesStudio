@@ -30,7 +30,7 @@ class NumberedCanvas(canvas.Canvas):
     def draw_page_number(self, page_count):
         self.setFont("Helvetica", 7)
         self.drawRightString(200*mm, 20*mm, "Page %d of %d" % (self._pageNumber, page_count))
-        self.drawCentredString(25*mm, 20*mm, 'https://bitbucket.org/zunzuncode/tkInterFit')
+        self.drawString(15*mm, 20*mm, 'tkInterFit - findcurves@gmail.com')
 
 
 

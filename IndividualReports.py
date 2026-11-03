@@ -90,81 +90,69 @@ def DataArrayStatisticsReport(parent, titleString, tempdata):
     return scrolledText
     
 
-def CoefficientAndFitStatistics(parent, equation):
-    scrolledText = tk_stxt.ScrolledText(parent, width=80, height=25, wrap=tk.NONE)
+def CoefficientAndFitStatisticsText(equation):
+    # returns the coefficient and fit statistics report as a string
+    lines = []
     if equation.upperCoefficientBounds or equation.lowerCoefficientBounds:
-        scrolledText.insert(tk.END, 'This model has coefficient bounds. Parameter statistics may\n')
-        scrolledText.insert(tk.END, 'not be valid for parameter values at or near the bounds.\n')
-        scrolledText.insert(tk.END, '\n')
-    
-    scrolledText.insert(tk.END, 'Degress of freedom error ' + str(equation.df_e) + '\n')
-    scrolledText.insert(tk.END, 'Degress of freedom regression ' + str(equation.df_r) + '\n')
-    
-    if equation.rmse == None:
-        scrolledText.insert(tk.END, 'Root Mean Squared Error (RMSE): n/a\n')
-    else:
-        scrolledText.insert(tk.END, 'Root Mean Squared Error (RMSE): ' + str(equation.rmse) + '\n')
-    
-    if equation.r2 == None:
-        scrolledText.insert(tk.END, 'R-squared: n/a\n')
-    else:
-        scrolledText.insert(tk.END, 'R-squared: ' + str(equation.r2) + '\n')
-    
-    if equation.r2adj == None:
-        scrolledText.insert(tk.END, 'R-squared adjusted: n/a\n')
-    else:
-        scrolledText.insert(tk.END, 'R-squared adjusted: ' + str(equation.r2adj) + '\n')
-    
-    if equation.Fstat == None:
-        scrolledText.insert(tk.END, 'Model F-statistic: n/a\n')
-    else:
-        scrolledText.insert(tk.END, 'Model F-statistic: ' + str(equation.Fstat) + '\n')
-    
-    if equation.Fpv == None:
-        scrolledText.insert(tk.END, 'Model F-statistic p-value: n/a\n')
-    else:
-        scrolledText.insert(tk.END, 'Model F-statistic p-value: ' + str(equation.Fpv) + '\n')
-    
-    if equation.ll == None:
-        scrolledText.insert(tk.END, 'Model log-likelihood: n/a\n')
-    else:
-        scrolledText.insert(tk.END, 'Model log-likelihood: ' + str(equation.ll) + '\n')
-    
-    if equation.aic == None:
-        scrolledText.insert(tk.END, 'Model AIC: n/a\n')
-    else:
-        scrolledText.insert(tk.END, 'Model AIC: ' + str(equation.aic) + '\n')
-    
-    if equation.bic == None:
-        scrolledText.insert(tk.END, 'Model BIC: n/a\n')
-    else:
-        scrolledText.insert(tk.END, 'Model BIC: ' + str(equation.bic) + '\n')
-    
-    
-    scrolledText.insert(tk.END, '\n')
-    scrolledText.insert(tk.END, "Individual Parameter Statistics:\n")
+        lines.append('This model has coefficient bounds. Parameter statistics may')
+        lines.append('not be valid for parameter values at or near the bounds.')
+        lines.append('')
+
+    lines.append('Degress of freedom error ' + str(equation.df_e))
+    lines.append('Degress of freedom regression ' + str(equation.df_r))
+
+    for label, value in [('Root Mean Squared Error (RMSE)', equation.rmse),
+                         ('R-squared', equation.r2),
+                         ('R-squared adjusted', equation.r2adj),
+                         ('Model F-statistic', equation.Fstat),
+                         ('Model F-statistic p-value', equation.Fpv),
+                         ('Model log-likelihood', equation.ll),
+                         ('Model AIC', equation.aic),
+                         ('Model BIC', equation.bic)]:
+        if value is None:
+            lines.append(label + ': n/a')
+        else:
+            lines.append(label + ': ' + str(value))
+
+    lines.append('')
+    lines.append("Individual Parameter Statistics:")
+    designators = equation.GetCoefficientDesignators()
     for i in range(len(equation.solvedCoefficients)):
-        if type(equation.tstat_beta) == type(None):
+        if equation.tstat_beta is None:
             tstat = 'n/a'
         else:
             tstat = '%-.5E' %  (equation.tstat_beta[i])
-    
-        if type(equation.pstat_beta) == type(None):
+
+        if equation.pstat_beta is None:
             pstat = 'n/a'
         else:
             pstat = '%-.5E' %  ( equation.pstat_beta[i])
-    
-        if type(equation.sd_beta) != type(None):
-            scrolledText.insert(tk.END, "Coefficient %s = %-.16E, std error: %-.5E\n" % (equation.GetCoefficientDesignators()[i], equation.solvedCoefficients[i], equation.sd_beta[i]))
+
+        if equation.sd_beta is not None:
+            lines.append("Coefficient %s = %-.16E, std error: %-.5E" % (designators[i], equation.solvedCoefficients[i], equation.sd_beta[i]))
         else:
-            scrolledText.insert(tk.END, "Coefficient %s = %-.16E, std error: n/a\n" % (equation.GetCoefficientDesignators()[i], equation.solvedCoefficients[i]))
-        scrolledText.insert(tk.END, "          t-stat: %s, p-stat: %s, 95 percent confidence intervals: [%-.5E, %-.5E]\n" % (tstat,  pstat, equation.ci[i][0], equation.ci[i][1]))
-            
-    scrolledText.insert(tk.END, '\n')
-    scrolledText.insert(tk.END, "Coefficient Covariance Matrix:\n")
-    for i in  equation.cov_beta:
-        scrolledText.insert(tk.END, str(i) + '\n')
-        
+            lines.append("Coefficient %s = %-.16E, std error: n/a" % (designators[i], equation.solvedCoefficients[i]))
+
+        if equation.ci is None:
+            ci = 'n/a'
+        else:
+            ci = '[%-.5E, %-.5E]' % (equation.ci[i][0], equation.ci[i][1])
+        lines.append("          t-stat: %s, p-stat: %s, 95 percent confidence intervals: %s" % (tstat, pstat, ci))
+
+    lines.append('')
+    lines.append("Coefficient Covariance Matrix:")
+    if equation.cov_beta is None:
+        lines.append('n/a')
+    else:
+        for i in equation.cov_beta:
+            lines.append(str(i))
+
+    return '\n'.join(lines) + '\n'
+
+
+def CoefficientAndFitStatistics(parent, equation):
+    scrolledText = tk_stxt.ScrolledText(parent, width=80, height=25, wrap=tk.NONE)
+    scrolledText.insert(tk.END, CoefficientAndFitStatisticsText(equation))
     return scrolledText
 
 
@@ -426,6 +414,40 @@ def ScatterPlot(parent, equation):
     return [canvas.get_tk_widget(), f]
 
 
+def InsertEquationHTML(textWidget, html):
+    # The text widget must have "sup" and "sub" tags configured.
+    # html <br> tags become new line characters
+    html = html.replace('<br>', '\n')
+
+    # display pyeq3's html superscript and subscript tags
+    # tkinter has no native HTML widget, and pyeq3's html is
+    # simple and has no *nested* HTML tags - no recursion needed
+    findIter = re.finditer(r'<su.>|</su.>', html)
+    currentIndex = 0
+    endingIndex = len(html)
+    itemCount = 0
+    for item in findIter:
+        span = item.span()
+        if not itemCount % 2: # text is *not* within HTML tags
+            t = html[currentIndex:span[0]]
+            textWidget.insert(tk.END, t)
+            currentIndex = span[1] # beginning tag
+        else: # text *is* within html tags
+            if html[span[1]-2] == 'b': # subscript tag
+                tag = 'sub'
+            else: # html superscript tag
+                tag = 'sup'
+            t = html[currentIndex:span[1]-6]
+            textWidget.insert(tk.END, t, tag)
+            currentIndex = span[1] # ending tag
+        itemCount += 1
+
+    # any ending text, or if no tags were found
+    if currentIndex < endingIndex:
+        t = html[currentIndex:endingIndex]
+        textWidget.insert(tk.END, t)
+
+
 def AllEquationReport(parent, dim):
     xyscrolledText = xy_stxt.XYScrolledText(parent, width=textboxWidth, height=textboxHeight, wrap=tk.NONE)
     xyscrolledText.tag_configure("sup", offset=5) # superscript is +5 pixels
@@ -459,39 +481,7 @@ def AllEquationReport(parent, dim):
                         xyscrolledText.insert(tk.END, equationName, 'italic')
                         xyscrolledText.insert(tk.END, '   ')
 
-                        html = equation.GetDisplayHTML()
-                        
-                        # html <br> tags become new line characters
-                        html = html.replace('<br>', '\n')
-                        
-                        # display pyeq3's html superscript and subscript tags
-                        # tkinter has no native HTML widget, and pyeq3's html os
-                        # simple and has no *nested* HTML tags - no recursion needed
-                        findIter = re.finditer(r'<su.>|</su.>', html)
-                        currentIndex = 0
-                        endingIndex = len(html)
-                        itemCount = 0
-                        for item in findIter:
-                            span = item.span()
-                            if not itemCount % 2: # text is *not* within HTML tags
-                                t = html[currentIndex:span[0]]
-                                xyscrolledText.insert(tk.END, t)
-                                currentIndex = span[1] # beginning tag
-                            else: # text *is* within html tags
-                                if html[span[1]-2] == 'b': # subscript tag
-                                    tag = 'sub'
-                                else: # html superscript tag
-                                    tag = 'sup'
-                                t = html[currentIndex:span[1]-6]
-                                xyscrolledText.insert(tk.END, t, tag)
-                                currentIndex = span[1] # ending tag
-                            itemCount += 1
-
-                        # any ending text, or if no tags were found
-                        if currentIndex < endingIndex:
-                            t = html[currentIndex:endingIndex]
-                            xyscrolledText.insert(tk.END, t)
-                            
+                        InsertEquationHTML(xyscrolledText, equation.GetDisplayHTML())
                         xyscrolledText.insert(tk.END, '\n')
                         
     return xyscrolledText

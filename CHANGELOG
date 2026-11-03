@@ -1,3 +1,14 @@
-The change log can be viewed at:
+tkInterFit is maintained by Ross Moffett (findcurves@gmail.com).
+
+1.2.0 (November 2026)
+  - Added the 2D and 3D Function Finder, based on the zunzunsite3 function
+    finder, with a ranked results window and a single PDF of all results
+
+1.1.0 (November 2026)
+  - Updated for Python 3.14 and current numpy, scipy, matplotlib and reportlab
+  - Added a Windows executable and installer
+
+Earlier versions were written by James R. Phillips. Their change log can
+be viewed at:
 
 https://bitbucket.org/zunzuncode/tkInterFit/commits/all

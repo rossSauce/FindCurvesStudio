@@ -4,9 +4,9 @@
 ; The resulting installer is written to installer\Output\
 
 #define MyAppName "tkinterFit"
-#define MyAppVersion "1.1.0"
-#define MyAppPublisher "zunzuncode"
-#define MyAppURL "https://bitbucket.org/zunzuncode/tkInterFit"
+#define MyAppVersion "1.2.0"
+#define MyAppPublisher "Ross Moffett"
+#define MyAppContact "findcurves@gmail.com"
 #define MyAppExeName "tkinterFit.exe"
 
 [Setup]
@@ -15,8 +15,8 @@ AppId={{6C1E6F2B-3A5D-4E8B-9C2A-7F1D4B8E2A61}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
-AppPublisherURL={#MyAppURL}
-AppSupportURL={#MyAppURL}
+AppContact={#MyAppContact}
+AppCopyright=Copyright (C) 2016 James R. Phillips, (C) 2026 Ross Moffett
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes

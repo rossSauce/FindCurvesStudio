@@ -176,7 +176,7 @@ class ResultsFrame(tk.Frame):
         scrolledText.insert(tk.END, AdditionalInfo.history)
 
         scrolledText = tk_stxt.ScrolledText(nbAdditionalInfo, width=IndividualReports.textboxWidth, height=IndividualReports.textboxHeight, wrap=tk.WORD)
-        nbAdditionalInfo.add(scrolledText, text="Author History")
+        nbAdditionalInfo.add(scrolledText, text="Maintainer And Author")
         scrolledText.insert(tk.END, AdditionalInfo.author)
 
         scrolledText = tk_stxt.ScrolledText(nbAdditionalInfo, width=IndividualReports.textboxWidth, height=IndividualReports.textboxHeight, wrap=tk.WORD)
