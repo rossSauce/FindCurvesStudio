@@ -1,4 +1,4 @@
-import os, sys, queue, pickle, time, inspect
+import queue
 import pyeq3
 
 import matplotlib # ensure this dependency imports for later use in fitting results
@@ -10,6 +10,7 @@ import tkinter.scrolledtext as tk_stxt
 
 import DataForControls as dfc
 import FittingThread
+import FittingResultsViewer
 
 
 class InterfaceFrame(tk.Frame):
@@ -155,8 +156,8 @@ class InterfaceFrame(tk.Frame):
         l = tk.Label(self, text=" ")
         l.grid(column=col, row=row)
         
-        # now bind our custom ""status_update"" event to the handler function
-        self.bind('<<status_update>>', self.StatusUpdateHandler)
+        # the fitting thread communicates with the GUI only through self.queue,
+        # since tkinter widgets must not be accessed from other threads
 
 
     def moduleSelectChanged_2D(self, event):
@@ -179,8 +180,8 @@ class InterfaceFrame(tk.Frame):
         fittingTarget = fittingTargetSelection.split('(')[1].split(')')[0]
 
         item = dfc.eq_od2D[moduleSelection][equationSelection]
-        eqString = 'pyeq3.Models_2D.' + moduleSelection + '.' + item[0] + "('" + fittingTarget + "','" + item[1] + "')"
-        self.equation = eval(eqString)
+        equationClass = getattr(getattr(pyeq3.Models_2D, moduleSelection), item[0])
+        self.equation = equationClass(fittingTarget, item[1])
 
         # convert text to numeric data checking for log of negative numbers, etc.
         try:
@@ -216,8 +217,9 @@ class InterfaceFrame(tk.Frame):
         self.statusBox.geometry('{}x{}+{}+{}'.format(width, height, x, y))        
 
         # thread will automatically start to run
-        # "status update" handler will re-enable buttons
+        # the queue polling handler will re-enable buttons
         self.fittingWorkerThread = FittingThread.FittingThread(self, self.equation)
+        self.after(100, self.StatusUpdateHandler)
 
 
     def OnFit_3D(self):
@@ -230,8 +232,8 @@ class InterfaceFrame(tk.Frame):
         fittingTarget = fittingTargetSelection.split('(')[1].split(')')[0]
 
         item = dfc.eq_od3D[moduleSelection][equationSelection]
-        eqString = 'pyeq3.Models_3D.' + moduleSelection + '.' + item[0] + "('" + fittingTarget + "','" + item[1] + "')"
-        self.equation = eval(eqString)
+        equationClass = getattr(getattr(pyeq3.Models_3D, moduleSelection), item[0])
+        self.equation = equationClass(fittingTarget, item[1])
 
         # convert text to numeric data checking for log of negative numbers, etc.
         try:
@@ -267,36 +269,53 @@ class InterfaceFrame(tk.Frame):
         self.statusBox.geometry('{}x{}+{}+{}'.format(width, height, x, y))        
 
         # thread will automatically start to run
-        # "status update" handler will re-enable buttons
+        # the queue polling handler will re-enable buttons
         self.fittingWorkerThread = FittingThread.FittingThread(self, self.equation)
+        self.after(100, self.StatusUpdateHandler)
 
 
-    # When "status_update" event is generated, get
-    # text data from queue and display it to the user.
-    # If the queue data is not text, it is the fitted equation.
-    def StatusUpdateHandler(self, *args):
-        data = self.queue.get_nowait()
-        
-        if type(data) == type(''): # text is used for status box display to user
-            self.statusBox.text.insert(tk.END, data + '\n')
-        else: # the queue data is now the fitted equation.
-            # write the fitted equation to a pickle file.  This
-            # allows the possibility of archiving the fitted equations
-            pickledEquationFile = open("pickledEquationFile", "wb")
-            pickle.dump(data, pickledEquationFile)
-            pickledEquationFile.close()
-    
-            # view fitting results
-            p = os.popen(sys.executable + ' FittingResultsViewer.py')
-            p.close()
+    # Periodically check the queue for data from the fitting thread.
+    # Text is displayed in the status box. Otherwise the queue data is
+    # either the fitted equation or an exception raised during fitting.
+    def StatusUpdateHandler(self):
+        while True:
+            try:
+                data = self.queue.get_nowait()
+            except queue.Empty:
+                self.after(100, self.StatusUpdateHandler) # check again later
+                return
 
-            # re-enable fitting buttons
+            if isinstance(data, str): # text is used for status box display to user
+                self.statusBox.text.insert(tk.END, data + '\n')
+                continue
+
+            # the fitting thread is finished - re-enable fitting buttons
+            # and destroy the now-unused status box
             self.buttonFit_2D.config(state=tk.NORMAL)
             self.buttonFit_3D.config(state=tk.NORMAL)
-        
-            # destroy the now-unused status box
             self.statusBox.destroy()
-            
+
+            if isinstance(data, BaseException):
+                tk_mbox.showerror("Error", "Fitting failed:\n\n" + repr(data))
+            else: # the queue data is now the fitted equation, view fitting results
+                self.ShowResults(data)
+            return
+
+
+    def ShowResults(self, equation):
+        resultsWindow = tk.Toplevel(self)
+        resultsWindow.title("tkinterFit - Fitting Results Viewer")
+        results = FittingResultsViewer.ResultsFrame(resultsWindow, equation)
+        results.pack()
+
+        # manually center the results window on the user display
+        resultsWindow.update_idletasks()
+        width = resultsWindow.winfo_width()
+        height = resultsWindow.winfo_height()
+        x = (resultsWindow.winfo_screenwidth() // 2) - (width // 2) # integer division
+        y = (resultsWindow.winfo_screenheight() // 2) - (height // 2) # integer division
+        resultsWindow.geometry('{}x{}+{}+{}'.format(width, height, x, y))
+
 
 
 if __name__ == "__main__":

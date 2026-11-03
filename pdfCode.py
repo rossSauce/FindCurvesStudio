@@ -1,6 +1,8 @@
-import time, os, glob
+import time, os, shutil, tempfile
 import reportlab
 import reportlab.platypus
+import reportlab.lib.styles
+import reportlab.lib.enums
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import mm
 import reportlab.lib.pagesizes
@@ -60,7 +62,10 @@ def CreatePDF(inFileAndPathName, inEquation, inGraphList, inTextList, inSourceCo
     pageElements.append(reportlab.platypus.PageBreak())
 
     # make a page for each report output, with report name as page header
-    filenamePrefix = 'temp_'
+    # temporary image files go in a private temp directory, since the
+    # current working directory may not be writable (e.g. Program Files)
+    tempDir = tempfile.mkdtemp(prefix='tkinterFit_')
+    filenamePrefix = os.path.join(tempDir, 'temp_')
     index = 1
     for report in inGraphList:
         pageElements.append(reportlab.platypus.XPreformatted('<br/><br/>', styles['CenteredBodyText']))
@@ -85,8 +90,8 @@ def CreatePDF(inFileAndPathName, inEquation, inGraphList, inTextList, inSourceCo
         replacedText = report[0]
         
         if -1 != report[1].find('Coefficients'):
-            reportText = reportText.replace('<sup>', '^')
-            reportText = reportText.replace('<SUP>', '^')
+            replacedText = replacedText.replace('<sup>', '^')
+            replacedText = replacedText.replace('<SUP>', '^')
 
         replacedText = replacedText.replace('\t', '    ') # convert tabs to four spaces
         replacedText = replacedText.replace('\r\n', '\n')
@@ -139,8 +144,8 @@ def CreatePDF(inFileAndPathName, inEquation, inGraphList, inTextList, inSourceCo
         pageElements.append(reportlab.platypus.PageBreak())
         
     doc = reportlab.platypus.SimpleDocTemplate(inFileAndPathName, pagesize=reportlab.lib.pagesizes.letter)
-    doc.build(pageElements, canvasmaker=NumberedCanvas)
-
-    # Done, now delete the temporary image files
-    for fname in glob.glob(filenamePrefix + "*.png"):
-        os.remove(fname)
+    try:
+        doc.build(pageElements, canvasmaker=NumberedCanvas)
+    finally:
+        # Done, now delete the temporary image files
+        shutil.rmtree(tempDir, ignore_errors=True)

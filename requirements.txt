@@ -1,0 +1,8 @@
+# Tested with Python 3.14.10 on Windows 11 (November 2026).
+# Install with:  pip install -r requirements.txt
+pyeq3==12.6.1
+numpy==2.5.4
+# pyeq3 uses scipy.odr, which is deprecated and will be removed in SciPy 1.19
+scipy==1.18.1
+matplotlib==3.11.2
+reportlab==5.1.0

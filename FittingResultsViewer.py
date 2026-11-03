@@ -13,17 +13,21 @@ import AdditionalInfo
 
 class ResultsFrame(tk.Frame):
     
-    def __init__(self, parent, pickledEquationFileName):
+    # 'equation' is either a fitted pyeq3 equation object, or the
+    # file name of a pickled fitted equation
+    def __init__(self, parent, equation):
         tk.Frame.__init__(self, parent)
-        
+
         self.graphReportsListForPDF = []
         self.textReportsListForPDF = []
         self.sourceCodeReportsListForPDF = []
-        
-        # first, load the fitted equation
-        equationFile = open(pickledEquationFileName, 'rb')
-        self.equation = pickle.load(equationFile)
-        equationFile.close()
+
+        # first, load the fitted equation if a file name was passed in
+        if isinstance(equation, str):
+            with open(equation, 'rb') as equationFile:
+                self.equation = pickle.load(equationFile)
+        else:
+            self.equation = equation
         
         topLevelNotebook = ttk.Notebook(self)
         topLevelNotebook.pack()
@@ -200,13 +204,13 @@ class ResultsFrame(tk.Frame):
     def createPDF(self):
         try:
             import reportlab
-        except:
-            tk_mbox.showerror("Error", "\nCould not import reportlab.\n\nPlease install using the command\n\n'pip3 install reportlab'")
+        except ImportError:
+            tk_mbox.showerror("Error", "\nCould not import reportlab.\n\nPlease install using the command\n\n'pip install reportlab'", parent=self)
             return
 
-        # see https://bugs.python.org/issue22810 for the
-        # "alloc: invalid block" error on application close 
         fName = filedialog.asksaveasfilename(
+                                parent = self,
+                                defaultextension = ".pdf",
                                 filetypes =(("PDF Files", "*.pdf"),("All Files","*.*")),
                                 title = "PDF file name"
                                 )
@@ -218,7 +222,7 @@ class ResultsFrame(tk.Frame):
                               self.textReportsListForPDF,
                               self.sourceCodeReportsListForPDF
                               )
-            tk_mbox.showinfo("Success", "\nSuccessfully created PDF file.")
+            tk_mbox.showinfo("Success", "\nSuccessfully created PDF file.", parent=self)
 
 
 
