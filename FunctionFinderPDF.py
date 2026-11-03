@@ -9,6 +9,7 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 
 import ReportGraphs
+import Scripture
 
 import pyeq3
 import reportlab
@@ -334,8 +335,9 @@ def CreatePDF(fileName, run, includeModelGraphs=True, includeErrorGraphs=False, 
         elements.append(reportlab.platypus.Paragraph('Data', styles['Heading2']))
         elements.append(_Table(rows, styles, colWidths=[1.3*inch] * len(rows[0])))
 
-    # ranked summary of every fitted equation
+    # inspirational message page, then the ranked summary of every fitted equation
     elements.append(reportlab.platypus.PageBreak())
+    elements.extend(Scripture.PageElements(styles['CenteredBodyText'], styles['BodyText']))
     elements.append(reportlab.platypus.Paragraph('Ranked Results', styles['Heading2']))
     rows = [['Rank', 'Equation', 'Family', 'Coefs', 'Fitting Target (%s)' % run.fittingTarget, 'R-squared', 'RMSE']]
     for rank, equation in enumerate(results, 1):

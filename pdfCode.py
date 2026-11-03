@@ -7,6 +7,8 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.units import mm
 import reportlab.lib.pagesizes
 
+import Scripture
+
 
 # from http://code.activestate.com/recipes/576832-improved-reportlab-recipe-for-page-x-of-y/
 class NumberedCanvas(canvas.Canvas):
@@ -60,6 +62,8 @@ def CreatePDF(inFileAndPathName, inEquation, inGraphList, inTextList, inSourceCo
     pageElements.append(reportlab.platypus.Paragraph("Created " + time.asctime(time.localtime()), styles['CenteredBodyText']))
 
     pageElements.append(reportlab.platypus.PageBreak())
+
+    pageElements.extend(Scripture.PageElements(styles['CenteredBodyText'], styles['BodyText']))
 
     # make a page for each report output, with report name as page header
     # temporary image files go in a private temp directory, since the

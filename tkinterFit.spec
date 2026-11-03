@@ -7,7 +7,7 @@ from PyInstaller.utils.hooks import collect_all
 
 # pyeq3 discovers its equation modules dynamically, so collect all of it.
 # pypdfium2 (PDF graph images) loads its pdfium library at run time.
-datas, binaries, hiddenimports = [], [], []
+datas, binaries, hiddenimports = [('Verses.txt', '.')], [], []  # Verses.txt: PDF report messages
 for package in ['pyeq3', 'pypdfium2', 'pypdfium2_raw']:
     package_datas, package_binaries, package_hiddenimports = collect_all(package)
     datas += package_datas
@@ -31,6 +31,7 @@ a = Analysis(
         # these are imported lazily, only when saving a PDF
         'pdfCode',
         'FunctionFinderPDF',
+        'Scripture',
         'reportlab.graphics.barcode.common',
         'reportlab.graphics.barcode.code128',
         'reportlab.graphics.barcode.code93',

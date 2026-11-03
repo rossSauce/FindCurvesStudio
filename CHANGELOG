@@ -13,6 +13,8 @@ tkInterFit is maintained by Ross Moffett (findcurves@gmail.com).
   - More compact main window for small screens: 2D and 3D tabs with
     collapsible Data, Fit One Equation and Function Finder sections, a
     fitting target list, and a resizable window that fits the screen
+  - PDF reports include an inspirational message page after the title
+    page, as in the ZunZun4 site's reports
 
 1.3.0 (November 2026)
   - Added an Import Data dialog for CSV, text and Excel files, and for
