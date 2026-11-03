@@ -1,5 +1,5 @@
-import collections, inspect
-import pyeq3
+# Example data and fitting target choices for the main window.
+# The equation lists are provided by EquationCatalog.py
 
 exampleText_2D = """\
 
@@ -44,65 +44,3 @@ fittingTargetList = ['Lowest Sum Of Squared Absolute Error (SSQABS)',
                      'Lowest Sum Of Squared Orthogonal Distance (ODR)',
                      'Lowest Akaike Information Criterion (AIC)',
                      ]
-
-# these require additional user input - available in zunzunsite3 but not this project
-excludedModuleNames_2D = [
-    'Polyfunctional',
-    'Rational',
-    'Spline',
-    'UserDefinedFunction',
-]
-excludedModuleNames_3D = [
-    'Polyfunctional',
-    'Spline',
-    'UserDefinedFunction',
-]
-
-eq_od2D = collections.OrderedDict()
-for submodule in inspect.getmembers(pyeq3.Models_2D):
-    if inspect.ismodule(submodule[1]):
-        if submodule[0] in excludedModuleNames_2D:
-            continue
-        eq_od2D[submodule[0]] = collections.OrderedDict()
-        for equationClass in inspect.getmembers(submodule[1]):
-            if inspect.isclass(equationClass[1]):
-                for extendedVersionName in ['Default', 'Offset']:
-                    
-                    # if the equation *already* has an offset,do not add an offset version here
-                    if (-1 != extendedVersionName.find('Offset')) and (equationClass[1].autoGenerateOffsetForm == False):
-                        continue
-                        
-                    # if the equation requires special user input, exclude here
-                    if equationClass[1].userSelectablePolynomialFlag or \
-                       equationClass[1].userCustomizablePolynomialFlag or \
-                       equationClass[1].userSelectableRationalFlag:
-                        continue
-
-                    equation = equationClass[1]('SSQABS', extendedVersionName)
-                    equationName = equation.GetDisplayName()                    
-                    eq_od2D[submodule[0]][equationName] = [equationClass[0], extendedVersionName]
-
-
-eq_od3D = collections.OrderedDict()
-for submodule in inspect.getmembers(pyeq3.Models_3D):
-    if inspect.ismodule(submodule[1]):
-        if submodule[0] in excludedModuleNames_3D:
-            continue
-        eq_od3D[submodule[0]] = collections.OrderedDict()
-        for equationClass in inspect.getmembers(submodule[1]):
-            if inspect.isclass(equationClass[1]):
-                for extendedVersionName in ['Default', 'Offset']:
-                    
-                    # if the equation *already* has an offset,do not add an offset version here
-                    if (-1 != extendedVersionName.find('Offset')) and (equationClass[1].autoGenerateOffsetForm == False):
-                        continue
-                        
-                    # if the equation requires special user input, exclude here
-                    if equationClass[1].userSelectablePolynomialFlag or \
-                       equationClass[1].userCustomizablePolynomialFlag or \
-                       equationClass[1].userSelectableRationalFlag:
-                        continue
-
-                    equation = equationClass[1]('SSQABS', extendedVersionName)
-                    equationName = equation.GetDisplayName()                    
-                    eq_od3D[submodule[0]][equationName] = [equationClass[0], extendedVersionName]

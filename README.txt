@@ -23,17 +23,60 @@ copy of Python and every library it needs - nothing else is required.
 
 
 
+Main Window
+-----------
+2D curve fitting and 3D surface fitting are on separate tabs. Each tab
+has collapsible sections - click a section title to show or hide it:
+  - Data: the data text editor, and "Import Data..."
+  - Fit One Equation: choose an equation and fit the data to it
+  - Function Finder: fit the data to many equations and rank them
+The fitting target applies to both kinds of fitting. A collapsed section
+shows a short summary, such as the number of data points. The window fits
+the screen and can be resized; the data editor uses any extra space.
+
+
+
+Equations
+---------
+Every equation in the pyeq3 library is available in the 2D and 3D
+equation lists. "Form" selects an extended form of the equation, where
+the equation allows it: With Offset, Plus Line (2D) or Plus Plane (3D),
+Reciprocal, Inverse, and Linear or Exponential Growth and Decay, each
+with or without an offset.
+
+Some equation types have settings, shown below the equation list:
+  - User-Selectable Polynomial: the polynomial order (X and Y for 3D)
+  - User-Customizable Polynomial (2D): the polynomial terms to use
+  - Polyfunctional: the function terms to use
+  - Rational (2D): the numerator and denominator terms
+  - Spline: the smoothing factor and spline order
+  - User Defined Function: type in a function, such as
+    a * X + b * exp(c * X), using X (and Y) for the data and letters
+    for the coefficients
+
+
+
 Function Finder
 ---------------
-The "Function Finder 2D" and "Function Finder 3D" buttons fit the text
-data to every standard equation, using the selected fitting target, and
-rank the results from best to worst fit. As on zunzunsite3, the
-"Coefficients" setting limits the equations tried to a maximum (or an
-exact) number of coefficients - defaults are 5 for 2D and 6 for 3D.
+The "Run Function Finder" button on the 2D and 3D tabs fits the text
+data to many equations, using the selected fitting target, and rank the
+results from best to worst fit. As on zunzunsite3, the "Coefficients"
+setting limits the equations tried to a maximum (or an exact) number of
+coefficients - defaults are 5 for 2D and 6 for 3D.
 
-Linear equations are fitted immediately; nonlinear equations are fitted
-in parallel on all but one CPU core and can take several minutes. Cancel
-shows the results found so far.
+By default every standard equation is tried in its Default, With Offset
+and Plus Line/Plane forms, along with polynomials of every order.
+"Options..." adds, as on zunzunsite3: Reciprocal, Inverse, and Linear and
+Exponential Growth and Decay forms; polyfunctional combinations of up to
+4 (2D) or 2 (3D) terms; and 2D rational equations with up to 2 numerator
+and 2 denominator terms. The options window shows how many equations will
+be tried. Splines and user defined functions are not used by the function
+finder.
+
+Equations are fitted in parallel on all but one CPU core: fast linear fits
+first, then nonlinear fits, which can take several minutes or more with
+many options selected. Cancel shows the results found so far. As on
+zunzunsite3, the best 1000 results are kept with full fit statistics.
 
 The results window lists every fitted equation with its coefficients and
 fit statistics. Click a column heading to sort, select an equation to see

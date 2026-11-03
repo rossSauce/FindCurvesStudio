@@ -4,7 +4,7 @@
 ; The resulting installer is written to installer\Output\
 
 #define MyAppName "tkinterFit"
-#define MyAppVersion "1.3.0"
+#define MyAppVersion "1.4.0"
 #define MyAppPublisher "Ross Moffett"
 #define MyAppContact "findcurves@gmail.com"
 #define MyAppExeName "tkinterFit.exe"

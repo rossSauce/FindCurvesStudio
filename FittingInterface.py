@@ -15,278 +15,232 @@ import FittingResultsViewer
 import FunctionFinder
 import FunctionFinderResults
 import ImportDataDialog
+import EquationCatalog
+import EquationSelector
+import CollapsibleSection
 
 
 class InterfaceFrame(tk.Frame):
     
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
-        
+
         self.queue = queue.Queue()
-
-        self.equationSelect_2D = tk.IntVar()
-        self.equationSelect_3D = tk.IntVar()
-        self.fittingTargetSelect_2D = tk.IntVar()
-        self.fittingTargetSelect_3D = tk.IntVar()
-
-        # ROW 0 - empty labels as visual buffers
-        row, col = (0, 0) # left edge
-        l = tk.Label(self, text="   ")
-        l.grid(column=col, row=row)
-        row, col = (0, 2) # center
-        l = tk.Label(self, text="     ")
-        l.grid(column=col, row=row)
-        row, col = (0, 4) # right edge
-        l = tk.Label(self, text="   ")
-        l.grid(column=col, row=row)
-        
-        # ROW 1 - text data entry labels, with buttons to import data from files
-        for dim, col in [(2, 1), (3, 3)]:
-            f = tk.Frame(self)
-            f.grid(column=col, row=1)
-            tk.Label(f, text="--- %dD Data Text Editor ---" % dim, font="-weight bold").pack(side=tk.LEFT)
-            tk.Button(f, text="Import Data...", command=lambda d=dim: self.OnImportData(d)).pack(side=tk.LEFT, padx=(10, 0))
-
-        # ROW 2 - text data input, no line wrap
-        row, col = (2, 1)
-        self.text_2D = tk_stxt.ScrolledText(self, width=45, height=12, wrap=tk.NONE)
-        self.text_2D.insert(tk.END, dfc.exampleText_2D) # inital text data
-        self.text_2D.grid(column=col, row=row, sticky=(tk.N, tk.W, tk.E, tk.S))
-
-        row, col = (2, 3)
-        self.text_3D = tk_stxt.ScrolledText(self, width=45, height=12, wrap=tk.NONE)
-        self.text_3D.insert(tk.END, dfc.exampleText_3D) # inital text data
-        self.text_3D.grid(column=col, row=row, sticky=(tk.N, tk.W, tk.E, tk.S))
-
-        # ROW 3 - empty label as visual buffer
-        row, col = (3, 0)
-        l = tk.Label(self, text=" ")
-        l.grid(column=col, row=row)
-
-        # ROW 4 - equation selection labels
-        # no "self" needed as no later references exist
-        row, col = (4, 1)
-        l = tk.Label(self, text="--- Standard 2D Equations ---", font="-weight bold")
-        l.grid(column=col, row=row)
-        
-        row, col = (4, 3)
-        l = tk.Label(self, text="--- Standard 3D Equations ---", font="-weight bold")
-        l.grid(column=col, row=row)
-
-        # ROW 5 - equation selection
-        row, col = (5, 1)
-        f = tk.Frame(self)
-        f.grid(column=col, row=row)
-        self.cb_Modules2D = tk.ttk.Combobox(f, state='readonly')
-        self.cb_Modules2D['values'] = sorted(list(dfc.eq_od2D.keys()))
-        self.cb_Modules2D.bind("<<ComboboxSelected>>", self.moduleSelectChanged_2D)
-        self.cb_Modules2D.set('Polynomial')
-        self.cb_Modules2D.pack(anchor=tk.W)
-
-        self.cb_Equations2D = tk.ttk.Combobox(f, state='readonly')
-        self.cb_Equations2D['width'] = 50
-        self.cb_Equations2D['values'] = sorted(list(dfc.eq_od2D['Polynomial'].keys()))
-        self.cb_Equations2D.set('1st Order (Linear)')
-        self.cb_Equations2D.pack(anchor=tk.W)
-
-        row, col = (5, 3)
-        f = tk.Frame(self)
-        f.grid(column=col, row=row)        
-        self.cb_Modules3D = tk.ttk.Combobox(f, state='readonly')
-        self.cb_Modules3D['values'] = sorted(list(dfc.eq_od3D.keys()))
-        self.cb_Modules3D.bind("<<ComboboxSelected>>", self.moduleSelectChanged_3D)
-        self.cb_Modules3D.set('Polynomial')
-        self.cb_Modules3D.pack(anchor=tk.W)
-
-        self.cb_Equations3D = tk.ttk.Combobox(f, state='readonly')
-        self.cb_Equations3D['width'] = 50
-        self.cb_Equations3D['values'] = sorted(list(dfc.eq_od3D['Polynomial'].keys()))
-        self.cb_Equations3D.set('Linear')
-        self.cb_Equations3D.pack(anchor=tk.W)
-
-        # ROW 6 - empty label as visual buffer
-        row, col = (6, 0)
-        l = tk.Label(self, text=" ")
-        l.grid(column=col, row=row)
-
-        # ROW 7 - fitting target selection labels
-        # no "self" needed as no later references exist
-        row, col = (7, 1)
-        l = tk.Label(self, text="--- Fitting Target 2D ---", font="-weight bold")
-        l.grid(column=col, row=row)
-        
-        row, col = (7, 3)
-        l = tk.Label(self, text="--- Fitting Target 3D ---", font="-weight bold")
-        l.grid(column=col, row=row)
-
-        # ROW 8 - fitting target selection radio buttons
-        row, col = (8, 1)
-        f = tk.Frame(self)
-        f.grid(column=col, row=row)        
-        index=0
-        for fittingTargetText in dfc.fittingTargetList:
-            rb = tk.Radiobutton(f, text=fittingTargetText, variable=self.fittingTargetSelect_2D, value=index)
-            rb.pack(anchor=tk.W)
-            index += 1
-
-        row, col = (8, 3)
-        f = tk.Frame(self)
-        f.grid(column=col, row=row)        
-        index=0
-        for fittingTargetText in dfc.fittingTargetList:
-            rb = tk.Radiobutton(f, text=fittingTargetText, variable=self.fittingTargetSelect_3D, value=index)
-            rb.pack(anchor=tk.W)
-            index += 1
-    
-            # ROW 9 - empty label as visual buffer
-            row, col = (9, 0)
-            l = tk.Label(self, text=" ")
-            l.grid(column=col, row=row)
-    
-        # ROW 10 - fitting buttons
-        row, col = (10, 1)
-        self.buttonFit_2D = tk.Button(self, text="Fit 2D Text Data", command=self.OnFit_2D)
-        self.buttonFit_2D.grid(column=col, row=row)
-    
-        row, col = (10, 3)
-        self.buttonFit_3D = tk.Button(self, text="Fit 3D Text Data", command=self.OnFit_3D)
-        self.buttonFit_3D.grid(column=col, row=row)
-
-        # ROW 11 - empty label as visual buffer
-        row, col = (11, 0)
-        l = tk.Label(self, text=" ")
-        l.grid(column=col, row=row)
-
-        # ROW 12 - function finder, which fits the data to all standard equations
-        self.maxCoefficients = {2: tk.IntVar(value=FunctionFinder.defaultMaxCoefficients[2]),
-                                3: tk.IntVar(value=FunctionFinder.defaultMaxCoefficients[3])}
-        self.exactCoefficientCount = {2: tk.BooleanVar(value=False), 3: tk.BooleanVar(value=False)}
-        self.buttonFunctionFinder = {}
-        for dim, col in [(2, 1), (3, 3)]:
-            f = tk.Frame(self)
-            f.grid(column=col, row=12)
-            tk.Label(f, text="Coefficients:").pack(side=tk.LEFT)
-            tk.Spinbox(f, from_=1, to=15, width=3, textvariable=self.maxCoefficients[dim], state='readonly').pack(side=tk.LEFT)
-            tk.Radiobutton(f, text="maximum", variable=self.exactCoefficientCount[dim], value=False).pack(side=tk.LEFT)
-            tk.Radiobutton(f, text="exact", variable=self.exactCoefficientCount[dim], value=True).pack(side=tk.LEFT)
-            b = tk.Button(f, text="Function Finder %dD" % dim, command=lambda d=dim: self.OnFunctionFinder(d))
-            b.pack(side=tk.LEFT, padx=(8, 0))
-            self.buttonFunctionFinder[dim] = b
-
-        # ROW 13 - empty label as visual buffer
-        row, col = (13, 0)
-        l = tk.Label(self, text=" ")
-        l.grid(column=col, row=row)
-
         # the fitting thread communicates with the GUI only through self.queue,
         # since tkinter widgets must not be accessed from other threads
 
+        self.fittingTargetSelect_2D = tk.IntVar(value=0)
+        self.fittingTargetSelect_3D = tk.IntVar(value=0)
+        self.maxCoefficients = {2: tk.IntVar(value=FunctionFinder.defaultMaxCoefficients[2]),
+                                3: tk.IntVar(value=FunctionFinder.defaultMaxCoefficients[3])}
+        self.exactCoefficientCount = {2: tk.BooleanVar(value=False), 3: tk.BooleanVar(value=False)}
+        self.functionFinderOptions = {2: FunctionFinder.FunctionFinderOptions(), 3: FunctionFinder.FunctionFinderOptions()}
+        self.equationSelector = {}
+        self.buttonFunctionFinder = {}
+        self.sections = {}
 
-    def moduleSelectChanged_2D(self, event):
-        self.cb_Equations2D['values'] = sorted(list(dfc.eq_od2D[event.widget.get()].keys()))
-        self.cb_Equations2D.current(0)
+        # 2D and 3D fitting are on separate tabs, each with collapsible
+        # sections, so that the window fits on small screens
+        self.notebook = ttk.Notebook(self)
+        self.notebook.pack(fill=tk.BOTH, expand=True, padx=6, pady=6)
+        for dim, title, exampleText in [(2, "  2D Curve Fitting  ", dfc.exampleText_2D),
+                                        (3, "  3D Surface Fitting  ", dfc.exampleText_3D)]:
+            tab = tk.Frame(self.notebook, padx=10, pady=8)
+            self.notebook.add(tab, text=title)
+            self.BuildTab(tab, dim, exampleText)
+        self.notebook.bind('<<NotebookTabChanged>>', lambda e: self.OnTabChanged())
+        self.OnTabChanged()
 
 
-    def moduleSelectChanged_3D(self, event):
-        self.cb_Equations3D['values'] = sorted(list(dfc.eq_od3D[event.widget.get()].keys()))
-        self.cb_Equations3D.current(0)
+    def OnTabChanged(self):
+        # A notebook is normally as tall as its tallest tab.  Hidden tabs
+        # request no space, so the window can fit the selected tab - for
+        # example when its sections are collapsed.
+        selected = self.notebook.select()
+        for tabName in self.notebook.tabs():
+            tab = self.notebook.nametowidget(tabName)
+            if tabName == selected:
+                tab.grid_propagate(True)
+            else:
+                tab.grid_propagate(False)
+                tab.configure(width=1, height=1)
+        self.after_idle(self.FitWindowToContents)
 
 
-    def OnFit_2D(self):
-        textData = self.text_2D.get("1.0", tk.END)
-        moduleSelection = self.cb_Modules2D.get()
-        equationSelection = self.cb_Equations2D.get()
-        fittingTargetSelection = dfc.fittingTargetList[self.fittingTargetSelect_2D.get()]
-        
+    def BuildTab(self, tab, dim, exampleText):
+        sections = {}
+        self.sections[dim] = sections
+
+        # data - the editor fills any extra space when the window is resized
+        tab.columnconfigure(0, weight=1)
+        tab.rowconfigure(0, weight=1)
+        section = CollapsibleSection.CollapsibleSection(tab, "%dD Data" % dim, expanded=True, expandBody=True)
+        section.grid(row=0, column=0, sticky='nsew')
+        tk.Button(section.headerExtras, text="Import Data...", command=lambda: self.OnImportData(dim)).pack(side=tk.RIGHT)
+        text = tk_stxt.ScrolledText(section.body, width=60, height=9, wrap=tk.NONE)
+        text.insert(tk.END, exampleText) # inital text data
+        text.pack(fill=tk.BOTH, expand=True)
+        text.bind('<<Modified>>', lambda e: self.UpdateDataSummary(dim))
+        sections['data'] = section
+        if dim == 2:
+            self.text_2D = text
+        else:
+            self.text_3D = text
+        self.UpdateDataSummary(dim)
+
+        # fitting target, used by both single equation fits and the function finder
+        row = tk.Frame(tab)
+        row.grid(row=1, column=0, sticky='ew', pady=(8, 6))
+        tk.Label(row, text="Fitting target:", font="-weight bold").pack(side=tk.LEFT)
+        combo = ttk.Combobox(row, state='readonly', width=52, values=dfc.fittingTargetList)
+        combo.current(0)
+        variable = self.fittingTargetSelect_2D if dim == 2 else self.fittingTargetSelect_3D
+        combo.bind('<<ComboboxSelected>>', lambda e: variable.set(combo.current()))
+        combo.pack(side=tk.LEFT, padx=(6, 0))
+
+        # fitting one equation
+        section = CollapsibleSection.CollapsibleSection(tab, "Fit One Equation", expanded=True)
+        section.grid(row=2, column=0, sticky='ew', pady=(4, 0))
+        selector = EquationSelector.EquationSelector(section.body, dim, 'Polynomial',
+                                                     '1st Order (Linear)' if dim == 2 else 'Linear')
+        selector.pack(anchor=tk.W, fill=tk.X)
+        self.equationSelector[dim] = selector
+        button = tk.Button(section.body, text="Fit %dD Data" % dim, width=16, command=lambda: self.OnFit(dim))
+        button.pack(anchor=tk.W, pady=(6, 4))
+        if dim == 2:
+            self.buttonFit_2D = button
+        else:
+            self.buttonFit_3D = button
+        sections['equation'] = section
+        for widget in (selector.moduleCombo, selector.equationCombo, selector.formCombo):
+            widget.bind('<<ComboboxSelected>>', lambda e: self.UpdateEquationSummary(dim), add='+')
+        self.UpdateEquationSummary(dim)
+
+        # the function finder, which fits the data to many equations
+        section = CollapsibleSection.CollapsibleSection(tab, "Function Finder", expanded=True)
+        section.grid(row=3, column=0, sticky='ew', pady=(6, 0))
+        f = tk.Frame(section.body)
+        f.pack(anchor=tk.W, pady=(0, 4))
+        tk.Label(f, text="Coefficients:").pack(side=tk.LEFT)
+        tk.Spinbox(f, from_=1, to=15, width=3, textvariable=self.maxCoefficients[dim], state='readonly').pack(side=tk.LEFT)
+        tk.Radiobutton(f, text="maximum", variable=self.exactCoefficientCount[dim], value=False).pack(side=tk.LEFT)
+        tk.Radiobutton(f, text="exact", variable=self.exactCoefficientCount[dim], value=True).pack(side=tk.LEFT)
+        tk.Button(f, text="Options...", command=lambda: self.OnFunctionFinderOptions(dim)).pack(side=tk.LEFT, padx=(10, 0))
+        b = tk.Button(f, text="Run Function Finder", command=lambda: self.OnFunctionFinder(dim))
+        b.pack(side=tk.LEFT, padx=(6, 0))
+        self.buttonFunctionFinder[dim] = b
+        section.SetSummary("finds the best fitting equations")
+        sections['finder'] = section
+
+        # resize the window to fit when sections open or close, or when the
+        # equation settings change size
+        def OnDataToggled(event):
+            # extra space goes to the data editor, or below the sections when it is hidden
+            expanded = sections['data'].expanded
+            tab.rowconfigure(0, weight=1 if expanded else 0)
+            tab.rowconfigure(4, weight=0 if expanded else 1)
+        sections['data'].bind('<<SectionToggled>>', OnDataToggled)
+        for section in sections.values():
+            section.bind('<<SectionToggled>>', lambda e: self.after_idle(self.FitWindowToContents), add='+')
+        selector.bind('<<SettingsChanged>>', lambda e: self.after_idle(self.FitWindowToContents))
+
+
+    def FitWindowToContents(self):
+        # Set the window height to what the contents need, within the screen.
+        # The data editor shrinks if the screen is too small.
+        root = self.winfo_toplevel()
+        if not root.winfo_ismapped():
+            return
+        root.update_idletasks()
+        maxHeight = root.winfo_screenheight() - 100 # leave room for the taskbar
+        height = min(root.winfo_reqheight(), maxHeight)
+        width = max(root.winfo_width(), min(root.winfo_reqwidth(), root.winfo_screenwidth() - 40))
+        if height != root.winfo_height() or width != root.winfo_width():
+            root.geometry('%dx%d' % (width, height))
+
+
+    def UpdateDataSummary(self, dim):
+        # the number of data points, shown in the Data header when collapsed
+        text = self.text_2D if dim == 2 else self.text_3D
+        text.edit_modified(False)
+        try:
+            count = FunctionFinder.CountDataPoints(dim, text.get('1.0', tk.END))
+            summary = '%d data points' % count
+        except Exception:
+            summary = 'no usable data'
+        self.sections[dim]['data'].SetSummary(summary)
+
+
+    def UpdateEquationSummary(self, dim):
+        selector = self.equationSelector[dim]
+        summary = selector.equationCombo.get()
+        if selector.formCombo.current() > 0:
+            summary += ' (' + selector.formCombo.get() + ')'
+        self.sections[dim]['equation'].SetSummary(summary)
+
+
+    def SelectedFittingTarget(self, dim):
+        variable = self.fittingTargetSelect_2D if dim == 2 else self.fittingTargetSelect_3D
+        fittingTargetSelection = dfc.fittingTargetList[variable.get()]
         # the GUI's fitting target string contains what we need - extract it
-        fittingTarget = fittingTargetSelection.split('(')[1].split(')')[0]
+        return fittingTargetSelection, fittingTargetSelection.split('(')[1].split(')')[0]
 
-        item = dfc.eq_od2D[moduleSelection][equationSelection]
-        equationClass = getattr(getattr(pyeq3.Models_2D, moduleSelection), item[0])
-        self.equation = equationClass(fittingTarget, item[1])
+
+    def OnFit(self, dim):
+        textData = (self.text_2D if dim == 2 else self.text_3D).get("1.0", tk.END)
+        fittingTargetSelection, fittingTarget = self.SelectedFittingTarget(dim)
+
+        try:
+            spec = self.equationSelector[dim].GetSpec()
+            self.equation = EquationCatalog.CreateEquation(spec, fittingTarget)
+        except ValueError as e:
+            tk_mbox.showerror("Error", str(e))
+            return
+        except Exception as e:
+            tk_mbox.showerror("Error", "This equation could not be created:\n\n" + repr(e))
+            return
 
         # convert text to numeric data checking for log of negative numbers, etc.
         try:
             pyeq3.dataConvertorService().ConvertAndSortColumnarASCII(textData, self.equation, False)
         except:
-            tk_mbox.showerror("Error", self.equation.reasonWhyDataRejected)
+            tk_mbox.showerror("Error", getattr(self.equation, 'reasonWhyDataRejected', '') or "The data could not be used with this equation.")
             return
 
         # check for number of coefficients > number of data points to be fitted
-        coeffCount = len(self.equation.GetCoefficientDesignators())
         dataCount = len(self.equation.dataCache.allDataCacheDictionary['DependentData'])
-        if coeffCount > dataCount:
-            tk_mbox.showerror("Error", "This equation requires a minimum of " + str(coeffCount) + " data points, you have supplied " + repr(dataCount) + ".")
-            return
-        
+        if EquationCatalog.IsSpline(self.equation):
+            params = spec['params']
+            if dim == 2:
+                required = params['xOrder'] + 1
+            else:
+                required = (params['xOrder'] + 1) * (params['yOrder'] + 1)
+            if dataCount < required:
+                tk_mbox.showerror("Error", "A spline of this order requires at least %d data points, you have supplied %d." % (required, dataCount))
+                return
+        else:
+            coeffCount = len(self.equation.GetCoefficientDesignators())
+            if coeffCount > dataCount:
+                tk_mbox.showerror("Error", "This equation requires a minimum of " + str(coeffCount) + " data points, you have supplied " + repr(dataCount) + ".")
+                return
+
         # Now the status dialog is used. Disable fitting buttons until thread completes
         self.SetFittingButtonsState(tk.DISABLED)
-        
+
         # create simple top-level text dialog to display status as fitting progresses
         # when the fitting thread completes, it will close the status box
         self.statusBox = tk.Toplevel()
         self.statusBox.title("Fitting Status")
         self.statusBox.text = tk.Text(self.statusBox)
         self.statusBox.text.pack()
-        
+
         # in tkinter the status box must be manually centered
         self.statusBox.update_idletasks()
         width = self.statusBox.winfo_width()
         height = self.statusBox.winfo_height()
         x = (self.statusBox.winfo_screenwidth() // 2) - (width // 2) # integer division
         y = (self.statusBox.winfo_screenheight() // 2) - (height // 2) # integer division
-        self.statusBox.geometry('{}x{}+{}+{}'.format(width, height, x, y))        
-
-        # thread will automatically start to run
-        # the queue polling handler will re-enable buttons
-        self.fittingWorkerThread = FittingThread.FittingThread(self, self.equation)
-        self.after(100, self.StatusUpdateHandler)
-
-
-    def OnFit_3D(self):
-        textData = self.text_3D.get("1.0", tk.END)
-        moduleSelection = self.cb_Modules3D.get()
-        equationSelection = self.cb_Equations3D.get()
-        fittingTargetSelection = dfc.fittingTargetList[self.fittingTargetSelect_3D.get()]
-        
-        # the GUI's fitting target string contains what we need - extract it
-        fittingTarget = fittingTargetSelection.split('(')[1].split(')')[0]
-
-        item = dfc.eq_od3D[moduleSelection][equationSelection]
-        equationClass = getattr(getattr(pyeq3.Models_3D, moduleSelection), item[0])
-        self.equation = equationClass(fittingTarget, item[1])
-
-        # convert text to numeric data checking for log of negative numbers, etc.
-        try:
-            pyeq3.dataConvertorService().ConvertAndSortColumnarASCII(textData, self.equation, False)
-        except:
-            tk_mbox.showerror("Error", self.equation.reasonWhyDataRejected)
-            return
-
-        # check for number of coefficients > number of data points to be fitted
-        coeffCount = len(self.equation.GetCoefficientDesignators())
-        dataCount = len(self.equation.dataCache.allDataCacheDictionary['DependentData'])
-        if coeffCount > dataCount:
-            tk_mbox.showerror("Error", "This equation requires a minimum of " + str(coeffCount) + " data points, you have supplied " + repr(dataCount) + ".")
-            return
-        
-        # Now the status dialog is used. Disable fitting buttons until thread completes
-        self.SetFittingButtonsState(tk.DISABLED)
-        
-        # create simple top-level text dialog to display status as fitting progresses
-        # when the fitting thread completes, it will close the status box
-        self.statusBox = tk.Toplevel()
-        self.statusBox.title("Fitting Status")
-        self.statusBox.text = tk.Text(self.statusBox)
-        self.statusBox.text.pack()
-        
-        # in tkinter the status box must be manually centered
-        self.statusBox.update_idletasks()
-        width = self.statusBox.winfo_width()
-        height = self.statusBox.winfo_height()
-        x = (self.statusBox.winfo_screenwidth() // 2) - (width // 2) # integer division
-        y = (self.statusBox.winfo_screenheight() // 2) - (height // 2) # integer division
-        self.statusBox.geometry('{}x{}+{}+{}'.format(width, height, x, y))        
+        self.statusBox.geometry('{}x{}+{}+{}'.format(width, height, x, y))
 
         # thread will automatically start to run
         # the queue polling handler will re-enable buttons
@@ -343,17 +297,10 @@ class InterfaceFrame(tk.Frame):
 
 
     def OnFunctionFinder(self, dim):
-        if dim == 2:
-            textData = self.text_2D.get("1.0", tk.END)
-            fittingTargetSelection = dfc.fittingTargetList[self.fittingTargetSelect_2D.get()]
-        else:
-            textData = self.text_3D.get("1.0", tk.END)
-            fittingTargetSelection = dfc.fittingTargetList[self.fittingTargetSelect_3D.get()]
+        textData = (self.text_2D if dim == 2 else self.text_3D).get("1.0", tk.END)
+        fittingTargetSelection, fittingTarget = self.SelectedFittingTarget(dim)
         maxCoefficients = self.maxCoefficients[dim].get()
         exactCount = self.exactCoefficientCount[dim].get()
-
-        # the GUI's fitting target string contains what we need - extract it
-        fittingTarget = fittingTargetSelection.split('(')[1].split(')')[0]
 
         # check that the text contains usable data before starting
         try:
@@ -366,7 +313,8 @@ class InterfaceFrame(tk.Frame):
 
         self.SetFittingButtonsState(tk.DISABLED)
         try:
-            self.functionFinderRun = FunctionFinder.FunctionFinderRun(dim, fittingTarget, textData, maxCoefficients, exactCount)
+            self.functionFinderRun = FunctionFinder.FunctionFinderRun(dim, fittingTarget, textData, maxCoefficients, exactCount,
+                                                                      self.functionFinderOptions[dim])
         except Exception as e:
             self.SetFittingButtonsState(tk.NORMAL)
             tk_mbox.showerror("Error", "Could not start the function finder:\n\n" + repr(e))
@@ -409,14 +357,19 @@ class InterfaceFrame(tk.Frame):
             self.ffStatus.progress['value'] = run.completed
             self.ffStatus.countLabel.config(text="%d of %d complete    %d fitted, %d skipped, %d failed" % (
                 run.completed, run.total, len(run.fitted), len(run.skipped), len(run.failed)))
-            best = run.BestSoFar()
-            if best is not None:
-                self.ffStatus.bestLabel.config(text="Best so far: %s (%s = %.6E)" % (
-                    best.GetDisplayName(), run.fittingTarget, best.fittingTargetValue))
+            best = run.BestSoFarDescription()
+            if best:
+                self.ffStatus.bestLabel.config(text="Best so far: " + best)
             self.after(200, self.FunctionFinderPoll)
             return
 
         self.FunctionFinderFinished()
+
+
+    def OnFunctionFinderOptions(self, dim):
+        def CurrentSettings():
+            return self.SelectedFittingTarget(dim)[1], self.maxCoefficients[dim].get(), self.exactCoefficientCount[dim].get()
+        FunctionFinderOptionsDialog(self, dim, self.functionFinderOptions[dim], CurrentSettings)
 
 
     def OnFunctionFinderCancel(self):
@@ -424,6 +377,9 @@ class InterfaceFrame(tk.Frame):
 
 
     def FunctionFinderFinished(self):
+        self.ffStatus.bestLabel.config(text="Calculating statistics for the best results...")
+        self.ffStatus.update_idletasks()
+        self.functionFinderRun.SortedResults() # calculates fit statistics
         self.ffStatus.destroy()
         self.SetFittingButtonsState(tk.NORMAL)
         window = FunctionFinderResults.FunctionFinderResultsWindow(self, self.functionFinderRun, self.ShowResults)
@@ -449,18 +405,91 @@ class InterfaceFrame(tk.Frame):
 
 
 
+class FunctionFinderOptionsDialog(tk.Toplevel):
+    # Chooses which equations the function finder tries, as on zunzunsite3,
+    # and shows how many equations will be fitted.
+
+    def __init__(self, parent, dim, options, currentSettingsFunction):
+        tk.Toplevel.__init__(self, parent)
+        self.title("Function Finder %dD Options" % dim)
+        self.transient(parent.winfo_toplevel())
+        self.resizable(False, False)
+        self.dim = dim
+        self.options = options
+        self.currentSettingsFunction = currentSettingsFunction
+
+        tk.Label(self, text="Equations to try:", font="-weight bold").pack(anchor=tk.W, padx=12, pady=(12, 2))
+        tk.Label(self, text="Standard forms of every equation: Default, With Offset, and Plus %s (always included)"
+                 % ('Line' if dim == 2 else 'Plane'), fg='gray25').pack(anchor=tk.W, padx=24)
+
+        self.polynomialOrders = tk.BooleanVar(value=options.polynomialOrders)
+        tk.Checkbutton(self, text="Polynomials of every order (up to %d)" % EquationCatalog.maxPolynomialOrder[dim],
+                       variable=self.polynomialOrders, command=self.OnChanged).pack(anchor=tk.W, padx=20)
+
+        frame = tk.LabelFrame(self, text=" Extended forms of every equation (each also with offset) ")
+        frame.pack(fill=tk.X, padx=12, pady=6)
+        self.groups = {}
+        for index, group in enumerate([g for g in EquationCatalog.formGroups if g != 'STANDARD']):
+            variable = tk.BooleanVar(value=group in options.formGroups)
+            self.groups[group] = variable
+            tk.Checkbutton(frame, text=EquationCatalog.formGroupLabels[group], variable=variable,
+                           command=self.OnChanged).grid(row=index // 2, column=index % 2, sticky=tk.W, padx=6)
+
+        frame = tk.LabelFrame(self, text=" Combinations of functions ")
+        frame.pack(fill=tk.X, padx=12, pady=(0, 6))
+        self.polyfunctional = tk.BooleanVar(value=options.polyfunctional)
+        tk.Checkbutton(frame, text="Polyfunctional: up to %d terms (sum of squared absolute error fitting target only)"
+                       % FunctionFinder.maxPolyfunctionalTerms[dim],
+                       variable=self.polyfunctional, command=self.OnChanged).pack(anchor=tk.W, padx=6)
+        self.rational = tk.BooleanVar(value=options.rational)
+        if dim == 2:
+            tk.Checkbutton(frame, text="Rational: up to %d numerator and %d denominator terms (slow nonlinear fits)"
+                           % (FunctionFinder.maxRationalTermsEach, FunctionFinder.maxRationalTermsEach),
+                           variable=self.rational, command=self.OnChanged).pack(anchor=tk.W, padx=6)
+
+        self.countLabel = tk.Label(self, text="", justify=tk.LEFT, fg='#804000')
+        self.countLabel.pack(anchor=tk.W, padx=12, pady=6)
+        tk.Button(self, text="Close", width=10, command=self.destroy).pack(pady=(0, 12))
+        self.OnChanged()
+
+
+    def OnChanged(self):
+        self.options.polynomialOrders = self.polynomialOrders.get()
+        self.options.formGroups = ['STANDARD'] + [g for g, v in self.groups.items() if v.get()]
+        self.options.polyfunctional = self.polyfunctional.get()
+        self.options.rational = self.rational.get() and self.dim == 2
+
+        fittingTarget, maxCoefficients, exactCount = self.currentSettingsFunction()
+        specs = FunctionFinder.ListEquationSpecs(self.dim, fittingTarget, maxCoefficients, exactCount, self.options)
+        linear = sum(1 for spec in specs if spec[2])
+        text = "With the current fitting target and %s %d coefficients, %d equations will be tried:\n" \
+               "%d fast linear fits and %d slower nonlinear fits." % (
+                   'exactly' if exactCount else 'up to', maxCoefficients, len(specs), linear, len(specs) - linear)
+        if self.options.polyfunctional and fittingTarget != 'SSQABS':
+            text += "\nPolyfunctionals are skipped: they need the sum of squared absolute error fitting target."
+        self.countLabel.config(text=text)
+
+
+
+def SizeWindowToScreen(root):
+    # Center the window, limiting its size to the screen.  The window is
+    # resizable, and the data editor uses any extra space.
+    root.update_idletasks()
+    screenWidth = root.winfo_screenwidth()
+    screenHeight = root.winfo_screenheight()
+    width = min(root.winfo_reqwidth(), screenWidth - 40)
+    height = min(root.winfo_reqheight(), screenHeight - 100) # leave room for the taskbar
+    x = max(0, (screenWidth - width) // 2)
+    y = max(0, (screenHeight - height) // 3)
+    root.geometry('{}x{}+{}+{}'.format(width, height, x, y))
+    root.minsize(min(width, 480), 200)
+
+
+
 if __name__ == "__main__":
     root = tk.Tk()
     interface = InterfaceFrame(root)
-    interface.pack()
+    interface.pack(fill=tk.BOTH, expand=True)
     root.title("tkinterFit - Curve And Surface Fitting Interface")
-    
-    # manually center the application window on the user display
-    root.update_idletasks()
-    width = root.winfo_width()
-    height = root.winfo_height()
-    x = (root.winfo_screenwidth() // 2) - (width // 2) # integer division
-    y = (root.winfo_screenheight() // 2) - (height // 2) # integer division
-    root.geometry('{}x{}+{}+{}'.format(width, height, x, y))        
-    
+    SizeWindowToScreen(root)
     root.mainloop()

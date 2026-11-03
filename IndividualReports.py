@@ -16,6 +16,7 @@ from tkinter import messagebox as tk_mbox
 import tkinter.scrolledtext as tk_stxt
 import XYscrolledtext as xy_stxt
 import ReportGraphs
+import EquationCatalog
 
 
 textboxWidth = 60 # units are characters
@@ -56,6 +57,10 @@ def CoefficientAndFitStatisticsText(equation):
             lines.append(label + ': ' + str(value))
 
     lines.append('')
+    if EquationCatalog.IsSpline(equation):
+        # splines have knots and coefficients rather than named parameters
+        return '\n'.join(lines) + '\n' + EquationCatalog.SplineDescription(equation)
+
     lines.append("Individual Parameter Statistics:")
     designators = equation.GetCoefficientDesignators()
     for i in range(len(equation.solvedCoefficients)):
@@ -99,18 +104,28 @@ def CoefficientAndFitStatistics(parent, equation):
 
 def CoefficientListing(parent, equation):
     scrolledText = tk_stxt.ScrolledText(parent, width=textboxWidth, height=textboxHeight, wrap=tk.NONE)
-    cd = equation.GetCoefficientDesignators()
-    for i in range(len(equation.solvedCoefficients)):
-        scrolledText.insert(tk.END, "%s = %-.16E\n" % (cd[i], equation.solvedCoefficients[i]))
+    if EquationCatalog.IsSpline(equation):
+        scrolledText.insert(tk.END, EquationCatalog.SplineDescription(equation))
+        return scrolledText
+    for name, value in EquationCatalog.CoefficientNamesAndValues(equation):
+        scrolledText.insert(tk.END, "%s = %-.16E\n" % (name, value))
 
     return scrolledText
 
 
+def SourceCodeText(equation, lanuageNameString):
+    try:
+        return getattr(pyeq3.outputSourceCodeService(), 'GetOutputSourceCode' + lanuageNameString)(equation)
+    except NotImplementedError:
+        # for example, pyeq3 generates spline source code for only some languages
+        return 'Source code in this language is not available for this type of equation.\n'
+    except Exception as e:
+        return 'Source code could not be generated: %r\n' % (e,)
+
+
 def SourceCodeReport(parent, equation, lanuageNameString):
-    scrolledText = tk_stxt.ScrolledText(parent, width=textboxWidth, height=textboxHeight, wrap=tk.NONE)    
-    code = eval('pyeq3.outputSourceCodeService().GetOutputSourceCode' + lanuageNameString + '(equation)')
-    scrolledText.insert(tk.END, code)
-    
+    scrolledText = tk_stxt.ScrolledText(parent, width=textboxWidth, height=textboxHeight, wrap=tk.NONE)
+    scrolledText.insert(tk.END, SourceCodeText(equation, lanuageNameString))
     return scrolledText
 
 

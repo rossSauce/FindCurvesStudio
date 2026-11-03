@@ -41,6 +41,8 @@ class FunctionFinderResultsWindow(tk.Toplevel):
             'exactly' if run.exactCoefficientCount else 'maximum', run.maxCoefficients)
         summary += '%d equations fitted, %d skipped as not applicable to this data, %d failed to fit.' % (
             len(run.fitted), len(run.skipped), len(run.failed))
+        if len(run.fitted) > len(self.results):
+            summary += '  The best %d are listed.' % len(self.results)
         if run.cancelled:
             summary += '\nCancelled by user - only %d of %d equations were tested.' % (run.completed, run.total)
         tk.Label(self, text=summary, justify=tk.LEFT, anchor=tk.W).pack(fill=tk.X, padx=8, pady=(8, 4))
