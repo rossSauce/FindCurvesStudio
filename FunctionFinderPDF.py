@@ -4,8 +4,11 @@
 import io, re, time, html
 
 import numpy
+import matplotlib
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_agg import FigureCanvasAgg
+
+import ReportGraphs
 
 import pyeq3
 import reportlab
@@ -48,54 +51,61 @@ def EquationHTMLForPDF(equationHTML):
     return text
 
 
-def ModelGraphPNG(equation, widthInches=6.0, heightInches=2.6):
-    # returns a BytesIO containing a PNG graph of the data and fitted model
-    fig = Figure(figsize=(widthInches, heightInches), dpi=110)
-    FigureCanvasAgg(fig)
-    axes = fig.add_subplot(111)
-    data = equation.dataCache.allDataCacheDictionary
-    x_data = data['IndependentData'][0]
-    z_or_y_data = data['DependentData']
+graphWidthInches = 7.0
+graphRowHeightInches = 2.9
 
-    if equation.GetDimensionality() == 2:
-        axes.plot(x_data, z_or_y_data, 'D', markersize=4)
-        ylim = axes.get_ylim()
-        xModel = numpy.linspace(min(x_data), max(x_data), 200)
-        try:
-            yModel = equation.CalculateModelPredictionsFromNewData(xModel)
-            axes.plot(xModel, yModel)
-        except Exception:
-            pass
-        # keep the data in view if the model has extreme values
-        margin = (ylim[1] - ylim[0]) * 0.25
-        axes.set_ylim(ylim[0] - margin, ylim[1] + margin)
-        axes.set_xlabel('X Data')
-        axes.set_ylabel('Y Data')
-    else:
-        y_data = data['IndependentData'][1]
-        axes.plot(x_data, y_data, 'o', markersize=4)
-        X, Y = numpy.meshgrid(numpy.linspace(min(x_data), max(x_data), 20),
-                              numpy.linspace(min(y_data), max(y_data), 20))
-        try:
-            Z = equation.CalculateModelPredictionsFromNewData(numpy.array([X.flatten(), Y.flatten()]))
-            Z = numpy.reshape(Z, X.shape)
-            if numpy.all(numpy.isfinite(Z)) and numpy.ptp(Z) > 0.0:
-                CS = axes.contour(X, Y, Z, 12, colors='k', linewidths=0.75)
-                axes.clabel(CS, inline=True, fontsize=7)
-        except Exception:
-            pass
-        # small margins so that data points on the edges are fully visible
-        xMargin = (max(x_data) - min(x_data)) * 0.04
-        yMargin = (max(y_data) - min(y_data)) * 0.06
-        axes.set_xlim(min(x_data) - xMargin, max(x_data) + xMargin)
-        axes.set_ylim(min(y_data) - yMargin, max(y_data) + yMargin)
-        axes.set_xlabel('X Data')
-        axes.set_ylabel('Y Data')
-        axes.set_title('Model contours with data points', fontsize=9)
 
-    fig.tight_layout()
-    buffer = io.BytesIO()
-    fig.savefig(buffer, format='png')
+def GraphRowsPNG(equation, includeModelGraphs=True, includeErrorGraphs=False):
+    # Returns a list of [BytesIO containing a PNG, height in inches], one per
+    # row of up to two graphs.  These are the same graphs shown in the
+    # individual fitting results viewer, drawn by the shared ReportGraphs
+    # module.  Each row is a separate image so rows can flow across pages.
+    rows = []
+    if includeModelGraphs:
+        if equation.GetDimensionality() == 2:
+            rows.append([('model',)])
+        else:
+            rows.append([('surface',), ('contour',)])
+    if includeErrorGraphs:
+        rows.append([('error', False), ('histogram', False)])
+        if ReportGraphs.PercentErrorAvailable(equation):
+            rows.append([('error', True), ('histogram', True)])
+    images = []
+    for row in rows:
+        images.append([_GraphRowPNG(equation, row), graphRowHeightInches])
+    return images
+
+
+def _GraphRowPNG(equation, row):
+    with matplotlib.rc_context({'font.size': 7, 'axes.titlesize': 8}):
+        fig = Figure(figsize=(graphWidthInches, graphRowHeightInches), dpi=110)
+        FigureCanvasAgg(fig)
+        grid = fig.add_gridspec(1, 2)
+        for columnIndex, panel in enumerate(row):
+            # a single graph in a row uses the full width
+            location = grid[0, :] if len(row) == 1 else grid[0, columnIndex]
+            kind = panel[0]
+            try:
+                if kind == 'model':
+                    axes = fig.add_subplot(location)
+                    ReportGraphs.DrawModelScatterConfidence(axes, equation, False, markersize=4)
+                elif kind == 'surface':
+                    axes = fig.add_subplot(location, projection='3d')
+                    ReportGraphs.DrawSurfacePlot(axes, equation, title='Surface Plot', markersize=8)
+                elif kind == 'contour':
+                    axes = fig.add_subplot(location)
+                    ReportGraphs.DrawContourPlot(axes, equation, labelFontSize=6, markersize=4)
+                elif kind == 'error':
+                    axes = fig.add_subplot(location)
+                    ReportGraphs.DrawErrorGraph(axes, equation, panel[1], markersize=4)
+                elif kind == 'histogram':
+                    axes = fig.add_subplot(location)
+                    ReportGraphs.DrawErrorHistogram(axes, equation, panel[1])
+            except Exception:
+                pass # leave this graph empty rather than losing the whole report
+        fig.tight_layout()
+        buffer = io.BytesIO()
+        fig.savefig(buffer, format='png')
     buffer.seek(0)
     return buffer
 
@@ -108,6 +118,8 @@ def _Styles():
     styles.add(ParagraphStyle(name='HeaderCell', parent=styles['BodyText'], fontSize=7, leading=8.5, fontName='Helvetica-Bold'))
     styles.add(ParagraphStyle(name='EquationHeading', parent=styles['Heading3'], spaceBefore=6, spaceAfter=2))
     styles.add(ParagraphStyle(name='Formula', parent=styles['BodyText'], fontSize=9, leading=13, leftIndent=12, spaceAfter=4))
+    styles.add(ParagraphStyle(name='SmallCode', parent=styles['Code'], fontSize=5.8, leading=6.6, leftIndent=0, spaceBefore=2))
+    styles.add(ParagraphStyle(name='SourceCodeHeading', parent=styles['Heading4'], fontSize=9, spaceBefore=4, spaceAfter=4))
     return styles
 
 
@@ -128,7 +140,7 @@ def _Table(rows, styles, colWidths=None, header=True):
     return table
 
 
-def _EquationDetails(rank, equation, styles, includeGraph):
+def _EquationDetails(rank, equation, styles, includeModelGraphs, includeErrorGraphs):
     elements = []
     elements.append(reportlab.platypus.Paragraph(
         'Rank %d: %s' % (rank, html.escape(equation.GetDisplayName())), styles['EquationHeading']))
@@ -161,20 +173,113 @@ def _EquationDetails(rank, equation, styles, includeGraph):
              ['Degrees of freedom error', str(equation.df_e), 'Degrees of freedom regression', str(equation.df_r)]]
     elements.append(_Table(stats, styles, colWidths=[1.5*inch, 2.0*inch, 1.6*inch, 2.0*inch], header=False))
 
-    if includeGraph:
+    # coefficient covariance matrix
+    if equation.cov_beta is not None:
+        elements.append(reportlab.platypus.Spacer(1, 4))
+        rows = [['Covariance'] + list(designators)]
+        for i, row in enumerate(numpy.atleast_2d(equation.cov_beta)):
+            rows.append([designators[i]] + [FormatNumber(v, '%.5E') for v in row])
+        columnWidth = min(0.95*inch, 6.3*inch / len(designators))
+        elements.append(_Table(rows, styles, colWidths=[0.75*inch] + [columnWidth] * len(designators)))
+
+    # absolute and percent error statistics, as in the individual results viewer
+    errorColumns = [['Absolute Error', ReportGraphs.DataArrayStatistics(equation.modelAbsoluteError)]]
+    if ReportGraphs.PercentErrorAvailable(equation):
+        errorColumns.append(['Percent Error', ReportGraphs.DataArrayStatistics(equation.modelPercentError)])
+    elements.append(reportlab.platypus.Spacer(1, 4))
+    rows = [['Error Statistics'] + [c[0] for c in errorColumns]]
+    for index, name in enumerate(['max', 'min', 'mean', 'standard error of mean', 'median',
+                                  'variance', 'std. deviation', 'skew', 'kurtosis']):
+        row = [name]
+        for columnName, statistics in errorColumns:
+            if not statistics:
+                row.append('all values equal' if index == 0 else '')
+            else:
+                row.append(FormatNumber(statistics[index][1], '%.10E'))
+        rows.append(row)
+    elements.append(_Table(rows, styles, colWidths=[1.6*inch] + [2.0*inch] * len(errorColumns)))
+
+    images = []
+    if includeModelGraphs or includeErrorGraphs:
         try:
-            image = reportlab.platypus.Image(ModelGraphPNG(equation), width=5.0*inch, height=5.0*inch*2.6/6.0)
-            image.hAlign = 'CENTER'
-            elements.append(reportlab.platypus.Spacer(1, 4))
-            elements.append(image)
+            for buffer, heightInches in GraphRowsPNG(equation, includeModelGraphs, includeErrorGraphs):
+                image = reportlab.platypus.Image(buffer, width=graphWidthInches*inch, height=heightInches*inch)
+                image.hAlign = 'CENTER'
+                images.append(image)
         except Exception:
             pass
 
-    elements.append(reportlab.platypus.Spacer(1, 14))
-    return [reportlab.platypus.KeepTogether(elements)]
+    # keep the tables together with the first row of graphs; any further
+    # rows of graphs follow on, possibly on the next page
+    if images:
+        elements.append(reportlab.platypus.Spacer(1, 4))
+        elements.append(images[0])
+    flowables = [reportlab.platypus.KeepTogether(elements)] + images[1:]
+    flowables.extend(_SourceCodeListings(rank, equation, styles))
+    flowables.append(reportlab.platypus.Spacer(1, 14))
+    return flowables
 
 
-def CreatePDF(fileName, run, includeGraphs=True, progressCallback=None, cancelEvent=None):
+# the same source code languages as the individual fitting results viewer
+sourceCodeLanguages = [('CPP', 'C++'), ('CSHARP', 'C#'), ('VBA', 'VBA'), ('PYTHON', 'Python'),
+                       ('JAVA', 'Java'), ('JAVASCRIPT', 'JavaScript'), ('JULIA', 'Julia'),
+                       ('SCILAB', 'Scilab'), ('MATLAB', 'MATLAB'), ('FORTRAN90', 'Fortran 90')]
+
+# listings longer than this are printed full width so they can split across pages
+maxSideBySideCodeLines = 100
+codeColumnCharacters = 72 # 5.8 point Courier in a 3.65 inch column
+
+
+def _WrapCode(code, width):
+    lines = []
+    for line in code.replace('\t', '    ').replace('\r\n', '\n').split('\n'):
+        while len(line) > width:
+            lines.append(line[:width])
+            line = '    ' + line[width:] # indent continuation lines
+        lines.append(line)
+    while lines and not lines[-1].strip():
+        lines.pop()
+    return '\n'.join(lines)
+
+
+def _SourceCodeListings(rank, equation, styles):
+    service = pyeq3.outputSourceCodeService()
+    listings = []
+    for languageCode, languageName in sourceCodeLanguages:
+        try:
+            code = getattr(service, 'GetOutputSourceCode' + languageCode)(equation)
+        except Exception as e:
+            code = 'Source code could not be generated: ' + repr(e)
+        listings.append([languageName, _WrapCode(code, codeColumnCharacters)])
+
+    flowables = [reportlab.platypus.CondPageBreak(1.5*inch),
+                 reportlab.platypus.Paragraph('Rank %d: %s - Source Code' % (rank, html.escape(equation.GetDisplayName())),
+                                              styles['SourceCodeHeading'])]
+
+    # pairs of listings side by side, or full width if too long for one page
+    def Cell(listing):
+        return [reportlab.platypus.Paragraph(listing[0], styles['HeaderCell']),
+                reportlab.platypus.Preformatted(listing[1], styles['SmallCode'])]
+
+    short = [l for l in listings if l[1].count('\n') < maxSideBySideCodeLines]
+    long = [l for l in listings if l[1].count('\n') >= maxSideBySideCodeLines]
+    for i in range(0, len(short), 2):
+        pair = short[i:i + 2]
+        row = [Cell(l) for l in pair] + ([''] if len(pair) == 1 else [])
+        table = reportlab.platypus.Table([row], colWidths=[3.65*inch, 3.65*inch], hAlign='LEFT')
+        table.setStyle(reportlab.platypus.TableStyle([('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                                                      ('LEFTPADDING', (0, 0), (-1, -1), 2),
+                                                      ('RIGHTPADDING', (0, 0), (-1, -1), 6)]))
+        flowables.append(table)
+        flowables.append(reportlab.platypus.Spacer(1, 6))
+    for listing in long:
+        flowables.append(reportlab.platypus.Paragraph(listing[0], styles['HeaderCell']))
+        flowables.append(reportlab.platypus.Preformatted(_WrapCode(listing[1], 160), styles['SmallCode']))
+        flowables.append(reportlab.platypus.Spacer(1, 6))
+    return flowables
+
+
+def CreatePDF(fileName, run, includeModelGraphs=True, includeErrorGraphs=False, progressCallback=None, cancelEvent=None):
     # 'run' is a completed FunctionFinder.FunctionFinderRun
     # progressCallback(completedCount, totalCount, message) is optional
     # cancelEvent is an optional threading.Event to stop PDF creation
@@ -240,10 +345,14 @@ def CreatePDF(fileName, run, includeGraphs=True, progressCallback=None, cancelEv
 
     # full details of every fitted equation
     elements.append(reportlab.platypus.PageBreak())
-    elements.append(reportlab.platypus.Paragraph('Equation Details', styles['Heading2']))
     for rank, equation in enumerate(results, 1):
         Progress(rank - 1, 'Preparing equation %d of %d' % (rank, len(results)))
-        elements.extend(_EquationDetails(rank, equation, styles, includeGraphs))
+        details = _EquationDetails(rank, equation, styles, includeModelGraphs, includeErrorGraphs)
+        if rank == 1:
+            # keep the section heading on the same page as the first equation
+            details[0] = reportlab.platypus.KeepTogether(
+                [reportlab.platypus.Paragraph('Equation Details', styles['Heading2']), details[0]])
+        elements.extend(details)
 
     # equations that could not be fitted
     notFitted = [[m, n, 'Skipped', r] for m, n, r in run.skipped] + [[m, n, 'Failed', r] for m, n, r in run.failed]

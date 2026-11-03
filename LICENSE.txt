@@ -1,10 +1,10 @@
-Copyright (C) 2016 James R. Phillips
+Original Copyright (C) 2016 James R. Phillips
 2548 Vera Cruz Drive
 Birmingham, AL 35235 USA
 email: zunzun@zunzun.com
 All rights reserved.
 
-Copyright (C) 2026 Ross Moffett (current maintainer)
+Updates Copyright (C) 2026 Ross Moffett (current maintainer)
 email: findcurves@gmail.com
 All rights reserved.
 

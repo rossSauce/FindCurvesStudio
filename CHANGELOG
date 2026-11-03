@@ -1,5 +1,12 @@
 tkInterFit is maintained by Ross Moffett (findcurves@gmail.com).
 
+1.3.0 (November 2026)
+  - Added an Import Data dialog for CSV, text and Excel files, and for
+    digitizing 2D data from graph images (raster, SVG, PDF, EMF, WMF)
+  - The function finder PDF now matches the individual results: 3D surface
+    and contour plots, 2D confidence intervals, covariance matrix, error
+    statistics, optional error graphs, and source code in ten languages
+
 1.2.0 (November 2026)
   - Added the 2D and 3D Function Finder, based on the zunzunsite3 function
     finder, with a ranked results window and a single PDF of all results

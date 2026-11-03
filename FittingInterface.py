@@ -14,6 +14,7 @@ import FittingThread
 import FittingResultsViewer
 import FunctionFinder
 import FunctionFinderResults
+import ImportDataDialog
 
 
 class InterfaceFrame(tk.Frame):
@@ -39,15 +40,12 @@ class InterfaceFrame(tk.Frame):
         l = tk.Label(self, text="   ")
         l.grid(column=col, row=row)
         
-        # ROW 1 - text data entry labels
-        # no "self" needed as no later references exist
-        row, col = (1, 1)
-        l = tk.Label(self, text="--- 2D Data Text Editor ---", font="-weight bold")
-        l.grid(column=col, row=row)
-        
-        row, col = (1, 3)
-        l = tk.Label(self, text="--- 3D Data Text Editor ---", font="-weight bold")
-        l.grid(column=col, row=row)
+        # ROW 1 - text data entry labels, with buttons to import data from files
+        for dim, col in [(2, 1), (3, 3)]:
+            f = tk.Frame(self)
+            f.grid(column=col, row=1)
+            tk.Label(f, text="--- %dD Data Text Editor ---" % dim, font="-weight bold").pack(side=tk.LEFT)
+            tk.Button(f, text="Import Data...", command=lambda d=dim: self.OnImportData(d)).pack(side=tk.LEFT, padx=(10, 0))
 
         # ROW 2 - text data input, no line wrap
         row, col = (2, 1)
@@ -321,6 +319,20 @@ class InterfaceFrame(tk.Frame):
             else: # the queue data is now the fitted equation, view fitting results
                 self.ShowResults(data)
             return
+
+
+    def OnImportData(self, dim):
+        textWidget = self.text_2D if dim == 2 else self.text_3D
+
+        def ImportText(text, replaceFlag):
+            if replaceFlag:
+                textWidget.delete('1.0', tk.END)
+            else:
+                textWidget.insert(tk.END, '\n')
+            textWidget.insert(tk.END, text)
+            textWidget.see('1.0' if replaceFlag else tk.END)
+
+        ImportDataDialog.ImportDataDialog(self, dim, ImportText)
 
 
     def SetFittingButtonsState(self, state):

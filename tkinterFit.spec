@@ -5,15 +5,26 @@
 
 from PyInstaller.utils.hooks import collect_all
 
-# pyeq3 discovers its equation modules dynamically, so collect all of it
-pyeq3_datas, pyeq3_binaries, pyeq3_hiddenimports = collect_all('pyeq3')
+# pyeq3 discovers its equation modules dynamically, so collect all of it.
+# pypdfium2 (PDF graph images) loads its pdfium library at run time.
+datas, binaries, hiddenimports = [], [], []
+for package in ['pyeq3', 'pypdfium2', 'pypdfium2_raw']:
+    package_datas, package_binaries, package_hiddenimports = collect_all(package)
+    datas += package_datas
+    binaries += package_binaries
+    hiddenimports += package_hiddenimports
 
 a = Analysis(
     ['tkinterFit.py'],
     pathex=[],
-    binaries=pyeq3_binaries,
-    datas=pyeq3_datas,
-    hiddenimports=pyeq3_hiddenimports + [
+    binaries=binaries,
+    datas=datas,
+    hiddenimports=hiddenimports + [
+        # these are imported lazily by the Import Data dialog
+        'openpyxl',
+        'xlrd',
+        'resvg_py',
+        'PIL.ImageTk',
         'matplotlib.backends.backend_tkagg',
         'mpl_toolkits.mplot3d',
         'scipy.stats',

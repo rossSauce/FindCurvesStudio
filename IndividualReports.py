@@ -1,7 +1,6 @@
 import pickle, inspect, re
 import pyeq3
 import numpy
-import scipy.stats
 
 import matplotlib
 matplotlib.use('TkAgg')
@@ -10,13 +9,13 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 # Figure objects are used directly rather than through pyplot, which is the
 # recommended way to embed matplotlib in a tkinter application
 from matplotlib.figure import Figure
-from matplotlib import cm # to colormap 3D surfaces from blue to red
 
 import tkinter as tk
 from tkinter import ttk as ttk
 from tkinter import messagebox as tk_mbox
 import tkinter.scrolledtext as tk_stxt
 import XYscrolledtext as xy_stxt
+import ReportGraphs
 
 
 textboxWidth = 60 # units are characters
@@ -25,70 +24,12 @@ textboxHeight = 12 # units are characters
 graphWidth = 800 # units are pixels
 graphHeight = 600 # units are pixels
 
-# 3D contour plot lines
-numberOfContourLines = 16
-
 # this is used in several reports
 def DataArrayStatisticsReport(parent, titleString, tempdata):
     scrolledText = tk_stxt.ScrolledText(parent, width=textboxWidth, height=textboxHeight, wrap=tk.NONE)
-    scrolledText.insert(tk.END, titleString + '\n\n')
-    
-    # must at least have max and min
-    minData = min(tempdata)
-    maxData = max(tempdata)
-    
-    if maxData == minData:
-        scrolledText.insert(tk.END, 'All data has the same value,\n')
-        scrolledText.insert(tk.END, "value = %-.16E\n" % (minData))
-        scrolledText.insert(tk.END, 'statistics cannot be calculated.')
-    else:
-        scrolledText.insert(tk.END, "max = %-.16E\n" % (maxData))
-        scrolledText.insert(tk.END, "min = %-.16E\n" % (minData))
-        
-        try:
-            temp = numpy.mean(tempdata)
-            scrolledText.insert(tk.END, "mean = %-.16E\n" % (temp))
-        except:
-            scrolledText.insert(tk.END, "mean gave error in calculation\n")
-
-        try:
-            temp = scipy.stats.sem(tempdata)
-            scrolledText.insert(tk.END, "standard error of mean = %-.16E\n" % (temp))
-        except:
-            scrolledText.insert(tk.END, "standard error of mean gave error in calculation\n")
-
-        try:
-            temp = numpy.median(tempdata)
-            scrolledText.insert(tk.END, "median = %-.16E\n" % (temp))
-        except:
-            scrolledText.insert(tk.END, "median gave error in calculation\n")
-
-        try:
-            temp = numpy.var(tempdata)
-            scrolledText.insert(tk.END, "variance = %-.16E\n" % (temp))
-        except:
-            scrolledText.insert(tk.END, "variance gave error in calculation\n")
-
-        try:
-            temp = numpy.std(tempdata)
-            scrolledText.insert(tk.END, "std. deviation = %-.16E\n" % (temp))
-        except:
-            scrolledText.insert(tk.END, "std. deviation gave error in calculation\n")
-
-        try:
-            temp = scipy.stats.skew(tempdata)
-            scrolledText.insert(tk.END, "skew = %-.16E\n" % (temp))
-        except:
-            scrolledText.insert(tk.END, "skew gave error in calculation\n")
-
-        try:
-            temp = scipy.stats.kurtosis(tempdata)
-            scrolledText.insert(tk.END, "kurtosis = %-.16E\n" % (temp))
-        except:
-            scrolledText.insert(tk.END, "kurtosis gave error in calculation\n")
-            
+    scrolledText.insert(tk.END, ReportGraphs.DataArrayStatisticsText(titleString, tempdata))
     return scrolledText
-    
+
 
 def CoefficientAndFitStatisticsText(equation):
     # returns the coefficient and fit statistics report as a string
@@ -173,243 +114,66 @@ def SourceCodeReport(parent, equation, lanuageNameString):
     return scrolledText
 
 
-def AbsoluteErrorGraph(parent, equation):
+# The graphs are drawn by ReportGraphs, which is shared with the function finder PDF
+def _GraphCanvas(parent, projection=None):
     f = Figure(figsize=(graphWidth/100.0, graphHeight/100.0), dpi=100)
     canvas = FigureCanvasTkAgg(f, master=parent)
-    axes = f.add_subplot(111)
-    dep_data = equation.dataCache.allDataCacheDictionary['DependentData']
-    abs_error = equation.modelAbsoluteError
-    axes.plot(dep_data, abs_error, 'D')
-    
-    if equation.GetDimensionality() == 2: # used for labels only
-        axes.set_title('Absolute Error vs. X Data')
-        axes.set_xlabel('X Data')
-    else:
-        axes.set_title('Absolute Error vs. Z Data')
-        axes.set_xlabel('Z Data')
-        
-    axes.set_ylabel(" Absolute Error") # Y axis label is always absolute error
+    axes = f.add_subplot(111, projection=projection)
+    return f, canvas, axes
 
+
+def AbsoluteErrorGraph(parent, equation):
+    f, canvas, axes = _GraphCanvas(parent)
+    ReportGraphs.DrawErrorGraph(axes, equation, percentFlag=False)
     canvas.draw()
-    
     return [canvas.get_tk_widget(), f]
 
 
 def PercentErrorGraph(parent, equation):
-    f = Figure(figsize=(graphWidth/100.0, graphHeight/100.0), dpi=100)
-    canvas = FigureCanvasTkAgg(f, master=parent)
-    axes = f.add_subplot(111)
-    dep_data = equation.dataCache.allDataCacheDictionary['DependentData']
-    per_error = equation.modelPercentError
-    axes.plot(dep_data, per_error, 'D')
-    
-    if equation.GetDimensionality() == 2: # used for labels only
-        axes.set_title('Percent Error vs. X Data')
-        axes.set_xlabel('X Data')
-    else:
-        axes.set_title('Percent Error vs. Z Data')
-        axes.set_xlabel('Z Data')
-        
-    axes.set_ylabel(" Percent Error") # Y axis label is always percent error
-
+    f, canvas, axes = _GraphCanvas(parent)
+    ReportGraphs.DrawErrorGraph(axes, equation, percentFlag=True)
     canvas.draw()
     return [canvas.get_tk_widget(), f]
 
 
 def AbsoluteErrorHistogram(parent, equation):
-    f = Figure(figsize=(graphWidth/100.0, graphHeight/100.0), dpi=100)
-    canvas = FigureCanvasTkAgg(f, master=parent)
-    axes = f.add_subplot(111)
-    abs_error = equation.modelAbsoluteError
-    bincount = len(abs_error)//2 # integer division
-    if bincount < 5:
-        bincount = 5
-    if bincount > 25:
-        bincount = 25
-    n, bins, patches = axes.hist(abs_error, bincount, rwidth=0.8)
-    
-    # some axis space at the top of the graph
-    ylim = axes.get_ylim()
-    if ylim[1] == max(n):
-        axes.set_ylim(0.0, ylim[1] + 1)
-
-    axes.set_title('Absolute Error Histogram') # add a title
-    axes.set_xlabel('Absolute Error') # X axis data label
-    axes.set_ylabel(" Frequency") # Y axis label is frequency
-
+    f, canvas, axes = _GraphCanvas(parent)
+    ReportGraphs.DrawErrorHistogram(axes, equation, percentFlag=False)
     canvas.draw()
     return [canvas.get_tk_widget(), f]
 
 
 def PercentErrorHistogram(parent, equation):
-    f = Figure(figsize=(graphWidth/100.0, graphHeight/100.0), dpi=100)
-    canvas = FigureCanvasTkAgg(f, master=parent)
-    axes = f.add_subplot(111)
-    per_error = equation.modelPercentError
-    bincount = len(per_error)//2 # integer division
-    if bincount < 5:
-        bincount = 5
-    if bincount > 25:
-        bincount = 25
-    n, bins, patches = axes.hist(per_error, bincount, rwidth=0.8)
-    
-    # some axis space at the top of the graph
-    ylim = axes.get_ylim()
-    if ylim[1] == max(n):
-        axes.set_ylim(0.0, ylim[1] + 1)
-
-    axes.set_title('Percent Error Histogram') # add a title
-    axes.set_xlabel('Percent Error') # X axis data label
-    axes.set_ylabel(" Frequency") # Y axis label is frequency
-
+    f, canvas, axes = _GraphCanvas(parent)
+    ReportGraphs.DrawErrorHistogram(axes, equation, percentFlag=True)
     canvas.draw()
     return [canvas.get_tk_widget(), f]
 
 
 def ModelScatterConfidenceGraph(parent, equation, scatterplotOnlyFlag):
-    f = Figure(figsize=(graphWidth/100.0, graphHeight/100.0), dpi=100)
-    canvas = FigureCanvasTkAgg(f, master=parent)
-    axes = f.add_subplot(111)
-    y_data = equation.dataCache.allDataCacheDictionary['DependentData']
-    x_data = equation.dataCache.allDataCacheDictionary['IndependentData'][0]
-
-    # first the raw data as a scatter plot
-    axes.plot(x_data, y_data,  'D')
-
-    if not scatterplotOnlyFlag:
-        # create data for the fitted equation plot
-        xModel = numpy.linspace(min(x_data), max(x_data))
-
-        tempcache = equation.dataCache # store the data cache
-        equation.dataCache = pyeq3.dataCache()
-        equation.dataCache.allDataCacheDictionary['IndependentData'] = numpy.array([xModel, xModel])
-        equation.dataCache.FindOrCreateAllDataCache(equation)
-        yModel = equation.CalculateModelPredictions(equation.solvedCoefficients, equation.dataCache.allDataCacheDictionary)
-        equation.dataCache = tempcache # restore the original data cache
-
-        # now the model as a line plot
-        axes.plot(xModel, yModel)
-
-        # now calculate confidence intervals
-        # http://support.sas.com/documentation/cdl/en/statug/63347/HTML/default/viewer.htm#statug_nlin_sect026.htm
-        # http://www.staff.ncl.ac.uk/tom.holderness/software/pythonlinearfit
-        mean_x = numpy.mean(x_data)
-        n = equation.nobs
-
-        t_value = scipy.stats.t.ppf(0.975, equation.df_e) # (1.0 - (a/2)) is used for two-sided t-test critical value, here a = 0.05
-
-        confs = t_value * numpy.sqrt((equation.sumOfSquaredErrors/equation.df_e)*(1.0/n + (numpy.power((xModel-mean_x),2.0)/
-                                                                                           ((numpy.sum(numpy.power(x_data,2.0)))-n*(numpy.power(mean_x,2.0))))))
-
-        # get lower and upper confidence limits based on predicted y and confidence intervals
-        upper = yModel + abs(confs)
-        lower = yModel - abs(confs)
-
-        # mask off any numbers outside the existing plot limits
-        booleanMask = yModel > axes.get_ylim()[0]
-        booleanMask &= (yModel < axes.get_ylim()[1])
-
-        # color scheme improves visibility on black background lines or points
-        axes.plot(xModel[booleanMask], lower[booleanMask], linestyle='solid', color='white')
-        axes.plot(xModel[booleanMask], upper[booleanMask], linestyle='solid', color='white')
-        axes.plot(xModel[booleanMask], lower[booleanMask], linestyle='dashed', color='blue')
-        axes.plot(xModel[booleanMask], upper[booleanMask], linestyle='dashed', color='blue')
-
-    if not scatterplotOnlyFlag:
-        axes.set_title('Model With 95% Confidence Intervals') # add a title
-    else:
-        axes.set_title('Scatter Plot') # add a title
-    axes.set_xlabel('X Data') # X axis data label
-    axes.set_ylabel('Y Data') # Y axis data label
-
+    f, canvas, axes = _GraphCanvas(parent)
+    ReportGraphs.DrawModelScatterConfidence(axes, equation, scatterplotOnlyFlag)
     canvas.draw()
     return [canvas.get_tk_widget(), f]
 
 
 def SurfacePlot(parent, equation):
-    f = Figure(figsize=(graphWidth/100.0, graphHeight/100.0), dpi=100)
-    canvas = FigureCanvasTkAgg(f, master=parent)
-    
-    axes = f.add_subplot(111, projection='3d')
-    axes.grid(True)
-    x_data = equation.dataCache.allDataCacheDictionary['IndependentData'][0]
-    y_data = equation.dataCache.allDataCacheDictionary['IndependentData'][1]
-    z_data = equation.dataCache.allDataCacheDictionary['DependentData']
-            
-    xModel = numpy.linspace(min(x_data), max(x_data), 20)
-    yModel = numpy.linspace(min(y_data), max(y_data), 20)
-    X, Y = numpy.meshgrid(xModel, yModel)
-
-    tempcache = equation.dataCache # store the data cache
-    equation.dataCache = pyeq3.dataCache()
-    equation.dataCache.allDataCacheDictionary['IndependentData'] = numpy.array([X, Y])
-    equation.dataCache.FindOrCreateAllDataCache(equation)
-    Z = equation.CalculateModelPredictions(equation.solvedCoefficients, equation.dataCache.allDataCacheDictionary)
-    equation.dataCache = tempcache# restore the original data cache
-
-    axes.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap=cm.coolwarm, linewidth=1, antialiased=True, alpha=0.75)
-
-    axes.scatter(x_data, y_data, z_data, depthshade=False, color='k')
-
-    axes.set_title('Surface Plot (click-drag with mouse)') # add a title for surface plot
-    axes.set_xlabel('X Data') # X axis data label
-    axes.set_ylabel('Y Data') # Y axis data label
-    axes.set_zlabel('Z Data') # Z axis data label
-
+    f, canvas, axes = _GraphCanvas(parent, projection='3d')
+    ReportGraphs.DrawSurfacePlot(axes, equation)
     canvas.draw()
     return [canvas.get_tk_widget(), f]
 
 
 def ContourPlot(parent, equation):
-    f = Figure(figsize=(graphWidth/100.0, graphHeight/100.0), dpi=100)
-    canvas = FigureCanvasTkAgg(f, master=parent)
-    axes = f.add_subplot(111)
-
-    x_data = equation.dataCache.allDataCacheDictionary['IndependentData'][0]
-    y_data = equation.dataCache.allDataCacheDictionary['IndependentData'][1]
-    z_data = equation.dataCache.allDataCacheDictionary['DependentData']
-            
-    xModel = numpy.linspace(min(x_data), max(x_data), 20)
-    yModel = numpy.linspace(min(y_data), max(y_data), 20)
-    X, Y = numpy.meshgrid(xModel, yModel)
-        
-    tempcache = equation.dataCache # store the data cache
-    equation.dataCache = pyeq3.dataCache()
-    equation.dataCache.allDataCacheDictionary['IndependentData'] = numpy.array([X, Y])
-    equation.dataCache.FindOrCreateAllDataCache(equation)
-    Z = equation.CalculateModelPredictions(equation.solvedCoefficients, equation.dataCache.allDataCacheDictionary)
-    equation.dataCache = tempcache # restore the original data cache
-        
-    axes.plot(x_data, y_data, 'o')
-
-    axes.set_title('Contour Plot') # add a title for contour plot
-    axes.set_xlabel('X Data') # X axis data label
-    axes.set_ylabel('Y Data') # Y axis data label
-    
-    CS = axes.contour(X, Y, Z, numberOfContourLines, colors='k')
-    axes.clabel(CS, inline=True, fontsize=10) # labels for contours
-
+    f, canvas, axes = _GraphCanvas(parent)
+    ReportGraphs.DrawContourPlot(axes, equation)
     canvas.draw()
     return [canvas.get_tk_widget(), f]
 
 
 def ScatterPlot(parent, equation):
-    f = Figure(figsize=(graphWidth/100.0, graphHeight/100.0), dpi=100)
-    canvas = FigureCanvasTkAgg(f, master=parent)
-    
-    axes = f.add_subplot(111, projection='3d')
-    axes.grid(True)
-    x_data = equation.dataCache.allDataCacheDictionary['IndependentData'][0]
-    y_data = equation.dataCache.allDataCacheDictionary['IndependentData'][1]
-    z_data = equation.dataCache.allDataCacheDictionary['DependentData']
-            
-    axes.scatter(x_data, y_data, z_data, depthshade=False, color='k')
-
-    axes.set_title('Scatter Plot (click-drag with mouse)')
-    axes.set_xlabel('X Data')
-    axes.set_ylabel('Y Data')
-    axes.set_zlabel('Z Data')
-
+    f, canvas, axes = _GraphCanvas(parent, projection='3d')
+    ReportGraphs.DrawScatterPlot3D(axes, equation)
     canvas.draw()
     return [canvas.get_tk_widget(), f]
 

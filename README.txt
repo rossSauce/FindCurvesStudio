@@ -39,10 +39,33 @@ The results window lists every fitted equation with its coefficients and
 fit statistics. Click a column heading to sort, select an equation to see
 its full coefficient and fit statistics, or double-click it to open the
 complete graphs and reports. "Save All Results To PDF" creates a single
-PDF with the data, a ranked summary table, the formula, coefficients,
-standard errors, t-statistics, p-values, confidence intervals and fit
-statistics of every fitted equation (optionally with a graph of each),
-and a list of the equations that could not be fitted.
+PDF with the data and a ranked summary table, then for every fitted
+equation: the formula; coefficients with standard errors, t-statistics,
+p-values and confidence intervals; fit statistics; the covariance matrix;
+absolute and percent error statistics; source code in ten languages; and
+optionally the same model graphs (2D model with 95% confidence intervals,
+or 3D surface and contour plots) and error graphs as the individual
+results viewer. It ends with a list of equations that could not be fitted.
+
+
+
+Importing Data
+--------------
+The "Import Data..." button beside each data editor title imports data
+from CSV or text files (.csv .txt .tsv .dat) and Microsoft Excel files
+(.xlsx .xlsm .xls): choose the sheet and the X, Y (and Z) columns. Rows
+without numbers in every selected column are skipped.
+
+For 2D data, the "Digitize Graph Image" tab reads data points from an
+image of a graph - PNG, JPG, GIF, BMP, TIFF, WebP, or vector SVG, PDF,
+EMF and WMF files:
+  1. Place two reference points on each axis at known values (such as
+     tick marks) and enter their values. Check "Log X/Y axis" for log
+     scales.
+  2. Click to add data points, or trace a curve automatically: pick the
+     curve's color by clicking it, optionally drag a box around the plot
+     area to leave out legends, then press "Trace Curve". Delete
+     unwanted points by right-clicking them, or in delete mode.
 
 
 

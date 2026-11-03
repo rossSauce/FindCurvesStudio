@@ -11,6 +11,7 @@ import tkinter.scrolledtext as tk_stxt
 
 import pyeq3
 import IndividualReports
+import ReportGraphs
 from FunctionFinderPDF import EquationFamily, FormatNumber
 
 
@@ -97,9 +98,13 @@ class FunctionFinderResultsWindow(tk.Toplevel):
         self.buttonView.pack(side=tk.LEFT)
         self.buttonPDF = tk.Button(buttonFrame, text="Save All Results To PDF...", command=self.OnSavePDF)
         self.buttonPDF.pack(side=tk.RIGHT)
-        self.includeGraphs = tk.BooleanVar(value=True)
-        tk.Checkbutton(buttonFrame, text="Include a graph for each equation in the PDF",
-                       variable=self.includeGraphs).pack(side=tk.RIGHT, padx=8)
+        self.includeErrorGraphs = tk.BooleanVar(value=False)
+        tk.Checkbutton(buttonFrame, text="error graphs",
+                       variable=self.includeErrorGraphs).pack(side=tk.RIGHT, padx=(0, 8))
+        self.includeModelGraphs = tk.BooleanVar(value=True)
+        tk.Checkbutton(buttonFrame, text="model graphs",
+                       variable=self.includeModelGraphs).pack(side=tk.RIGHT)
+        tk.Label(buttonFrame, text="Include in PDF:").pack(side=tk.RIGHT)
 
         if self.results:
             self.tree.selection_set('0')
@@ -148,6 +153,9 @@ class FunctionFinderResultsWindow(tk.Toplevel):
         self.details.insert(tk.END, '\n\nFitting target (%s): %s\n\n' % (
             equation.fittingTarget, FormatNumber(equation.fittingTargetValue, '%.16E')))
         self.details.insert(tk.END, IndividualReports.CoefficientAndFitStatisticsText(equation))
+        self.details.insert(tk.END, '\n' + ReportGraphs.DataArrayStatisticsText('Absolute Error Statistics', equation.modelAbsoluteError))
+        if ReportGraphs.PercentErrorAvailable(equation):
+            self.details.insert(tk.END, '\n' + ReportGraphs.DataArrayStatisticsText('Percent Error Statistics', equation.modelPercentError))
 
 
     def OnViewFullResults(self):
@@ -170,7 +178,7 @@ class FunctionFinderResultsWindow(tk.Toplevel):
                                                 filetypes=(("PDF Files", "*.pdf"), ("All Files", "*.*")),
                                                 title="PDF file name")
         if fileName:
-            PDFProgressDialog(self, self.run, fileName, self.includeGraphs.get())
+            PDFProgressDialog(self, self.run, fileName, self.includeModelGraphs.get(), self.includeErrorGraphs.get())
 
 
 
@@ -178,7 +186,7 @@ class PDFProgressDialog(tk.Toplevel):
     # Creates the PDF in a background thread, showing progress.  The dialog
     # is modal so that the fitted equations are not used elsewhere meanwhile.
 
-    def __init__(self, parent, run, fileName, includeGraphs):
+    def __init__(self, parent, run, fileName, includeModelGraphs, includeErrorGraphs):
         tk.Toplevel.__init__(self, parent)
         self.title("Creating PDF")
         self.transient(parent)
@@ -196,18 +204,18 @@ class PDFProgressDialog(tk.Toplevel):
 
         self.queue = queue.Queue()
         self.cancelEvent = threading.Event()
-        self.thread = threading.Thread(target=self.Worker, args=(run, fileName, includeGraphs), daemon=True)
+        self.thread = threading.Thread(target=self.Worker, args=(run, fileName, includeModelGraphs, includeErrorGraphs), daemon=True)
         self.thread.start()
         self.after(100, self.Poll)
 
 
-    def Worker(self, run, fileName, includeGraphs):
+    def Worker(self, run, fileName, includeModelGraphs, includeErrorGraphs):
         # runs in the background thread - communicate only through the queue
         import FunctionFinderPDF
         def Progress(done, total, message):
             self.queue.put(('progress', done, total, message))
         try:
-            FunctionFinderPDF.CreatePDF(fileName, run, includeGraphs, Progress, self.cancelEvent)
+            FunctionFinderPDF.CreatePDF(fileName, run, includeModelGraphs, includeErrorGraphs, Progress, self.cancelEvent)
             self.queue.put(('done',))
         except FunctionFinderPDF.PDFCancelled:
             self.queue.put(('cancelled',))

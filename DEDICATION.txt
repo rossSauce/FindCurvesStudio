@@ -1,4 +1,8 @@
-The tkInterFit project is dedicated to Jesus of Nazareth, son of the living God.
+The tkInterFit project was originally created
+by James Phillips, updates respectfully made
+in his honor.  As he was a devout follower,
+he dedicated this project to Jesus of Nazareth, 
+son of the living God.
 
 Ephesians 4:28
 

@@ -6,3 +6,10 @@ numpy==2.5.4
 scipy==1.18.1
 matplotlib==3.11.2
 reportlab==5.1.0
+# Import Data dialog: Excel files (.xlsx/.xlsm, and .xls)
+openpyxl==3.1.5
+xlrd==2.0.2
+# Import Data dialog: PDF and SVG graph images (other images use Pillow,
+# which is installed with matplotlib)
+pypdfium2==5.14.0
+resvg-py==0.5.0
