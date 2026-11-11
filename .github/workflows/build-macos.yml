@@ -28,7 +28,7 @@ jobs:
 
       - name: Run build_macos.sh
         run: |
-          chmod +x ./build_macos.sh
+          chmod +x ./build-macos.sh
           ./build_macos.sh
 
       - name: Zip the Application Bundle
