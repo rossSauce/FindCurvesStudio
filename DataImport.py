@@ -8,7 +8,7 @@
 #
 # This module does not use tkinter, so it can be tested on its own.
 
-import csv, io, math, os
+import csv, io, math, os, sys
 
 import numpy
 
@@ -19,10 +19,13 @@ spreadsheetFileTypes = [('Data files', '*.csv *.txt *.tsv *.dat *.xlsx *.xlsm *.
                         ('All files', '*.*')]
 
 rasterImageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tif', '.tiff', '.webp']
-vectorImageExtensions = ['.svg', '.pdf', '.emf', '.wmf']
+# Pillow can only render EMF and WMF files on Windows
+windowsMetafileExtensions = ['.emf', '.wmf']
+vectorImageExtensions = ['.svg', '.pdf'] + (windowsMetafileExtensions if sys.platform == 'win32' else [])
+vectorImageFormatNames = ', '.join(e[1:].upper() for e in vectorImageExtensions)
 imageFileTypes = [('Graph images', ' '.join('*' + e for e in rasterImageExtensions + vectorImageExtensions)),
                   ('Raster images', ' '.join('*' + e for e in rasterImageExtensions)),
-                  ('Vector images (SVG, PDF, EMF, WMF)', ' '.join('*' + e for e in vectorImageExtensions)),
+                  ('Vector images (%s)' % vectorImageFormatNames, ' '.join('*' + e for e in vectorImageExtensions)),
                   ('All files', '*.*')]
 
 
@@ -209,7 +212,10 @@ def LoadGraphImage(fileName, vectorScale=2.0):
             image = pdf[0].render(scale=vectorScale).to_pil()
         finally:
             pdf.close()
-    elif extension in ['.emf', '.wmf']:
+    elif extension in windowsMetafileExtensions:
+        if sys.platform != 'win32':
+            raise ValueError("EMF and WMF images can only be opened on Windows. "
+                             "Please convert the image to SVG, PDF or PNG.")
         image = Image.open(fileName)
         try:
             image.load(dpi=int(96 * vectorScale)) # rendering requires Windows

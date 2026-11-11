@@ -67,3 +67,22 @@ coll = COLLECT(
     upx=False,
     name='tkinterFit',
 )
+
+# macOS only (build-macos.sh): wrap the files in dist/tkinterFit.app
+import os, re, sys
+if sys.platform == 'darwin':
+    with open(os.path.join(SPECPATH, 'installer', 'tkinterFit.iss')) as f:
+        version = re.search(r'#define MyAppVersion "([^"]+)"', f.read()).group(1)
+    app = BUNDLE(
+        coll,
+        name='tkinterFit.app',
+        icon=None,
+        bundle_identifier='org.tkinterfit.tkinterFit',
+        version=version,
+        info_plist={
+            'CFBundleDisplayName': 'tkinterFit',
+            'CFBundleShortVersionString': version,
+            'NSHighResolutionCapable': True,
+            'NSHumanReadableCopyright': 'Copyright (C) 2016 James R. Phillips, (C) 2026 Ross Moffett',
+        },
+    )

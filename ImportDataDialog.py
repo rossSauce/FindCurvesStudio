@@ -2,7 +2,7 @@
 # from CSV/text files and Microsoft Excel workbooks, or (2D only) by
 # digitizing data points from an image of a graph.
 
-import os
+import os, sys
 
 import tkinter as tk
 from tkinter import ttk
@@ -251,12 +251,17 @@ class GraphImageTab(tk.Frame):
         self.canvas.create_text(20, 20, anchor=tk.NW, tags='help', fill='gray25',
                                 text="Open an image of a 2D graph to begin.\n\n"
                                      "Supported formats: PNG, JPG, GIF, BMP, TIFF, WebP,\n"
-                                     "and vector graphs in SVG, PDF, EMF and WMF.")
+                                     "and vector graphs in %s." % DataImport.vectorImageFormatNames)
 
         self.canvas.bind('<ButtonPress-1>', self.OnPress)
         self.canvas.bind('<B1-Motion>', self.OnDrag)
         self.canvas.bind('<ButtonRelease-1>', self.OnRelease)
         self.canvas.bind('<ButtonPress-3>', self.OnRightClick)
+        if sys.platform == 'darwin':
+            # macOS Tk 8.6 reports a right-click as button 2, and one-button
+            # mice and trackpads right-click with Control-click
+            self.canvas.bind('<ButtonPress-2>', self.OnRightClick)
+            self.canvas.bind('<Control-ButtonPress-1>', self.OnRightClick)
         self.canvas.bind('<Motion>', self.OnMotion)
 
         # the controls
@@ -424,7 +429,8 @@ class GraphImageTab(tk.Frame):
 
     def OnModeChanged(self):
         self.placing = None
-        help = {'add': "Click to add a data point. Right-click a point to delete it.",
+        rightClick = "Right-click or Control-click" if sys.platform == 'darwin' else "Right-click"
+        help = {'add': "Click to add a data point. %s a point to delete it." % rightClick,
                 'delete': "Click a point, or drag a box around points, to delete them.",
                 'color': "Click on the curve to use its color for tracing, then press Trace Curve.",
                 'area': "Drag a box around the plot area to trace only inside it - for example to "

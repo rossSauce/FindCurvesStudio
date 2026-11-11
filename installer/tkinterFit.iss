@@ -20,7 +20,7 @@ AppCopyright=Copyright (C) 2016 James R. Phillips, (C) 2026 Ross Moffett
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
-LicenseFile=..\LICENSE.txt
+LicenseFile=..\LICENSE.md
 OutputDir=Output
 OutputBaseFilename=tkinterFit-{#MyAppVersion}-Setup
 Compression=lzma2/max
@@ -41,8 +41,8 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 Source: "..\dist\tkinterFit\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "..\LICENSE.txt"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\README.txt"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\LICENSE.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
