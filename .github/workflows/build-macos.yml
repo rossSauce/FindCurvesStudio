@@ -26,6 +26,14 @@ jobs:
           pip install pyinstaller
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
+      - name: Install Tkinter support
+        run: |
+          brew install python-tk@3.14 tcl-tk || brew install python-tk || true
+
+      - name: Run build-macos.sh
+        run: |
+          chmod +x ./build-macos.sh
+          ./build-macos.sh
       - name: Run build_macos.sh
         run: |
           chmod +x ./build-macos.sh
