@@ -10,13 +10,17 @@ if __name__ == '__main__':
 
     import tkinter as tk
     import FittingInterface
+    import GettingStarted
+    import Theme
 
     # Note that you can embed the application into
     # your own tkinter programs as shown here
     root = tk.Tk()
+    Theme.Apply(root) # before creating any other widgets
     interface = FittingInterface.InterfaceFrame(root)
     interface.pack(fill=tk.BOTH, expand=True)
-    root.title("tkinterFit - Curve And Surface Fitting Interface")
+    root.title("FindCurves Studio - Curve And Surface Fitting")
+    GettingStarted.AddHelpMenu(root, interface.helpButtonArea)
 
     # center the window, limited to the size of the screen
     FittingInterface.SizeWindowToScreen(root)

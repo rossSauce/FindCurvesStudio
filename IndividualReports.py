@@ -272,7 +272,7 @@ if __name__ == "__main__":
     root = tk.Tk()
     interface = FittingResultsViewer.ResultsFrame(root, 'pickledEquationFile')
     interface.pack()
-    root.title("Example tkinterFit -  Fitting Results Viewer")
+    root.title("FindCurves Studio - Fitting Results")
     
     # manually center the application window on the user display
     root.update_idletasks()

@@ -1,8 +1,8 @@
-# tkInterFit
+# FindCurves Studio
 
-Welcome to tkInterFit, an example of creating a cross-platform curve and
-surface fitting application using tkinter and the
-[pyeq3](https://pypi.org/project/pyeq3/) fitting library.
+FindCurves Studio is a free curve and surface fitting application for
+Windows, macOS and Linux, using the [pyeq3](https://pypi.org/project/pyeq3/)
+fitting library. It was formerly named tkInterFit.
 
 - Fit 2D and 3D data to any of the several hundred pyeq3 equations, with
   extended forms, polynomials, polyfunctionals, rationals, splines and user
@@ -13,17 +13,18 @@ surface fitting application using tkinter and the
 - Windows installer, macOS app and Linux package with Python and all
   libraries bundled
 
-See also <http://zunzun.com/CommonProblems/>, and [CHANGELOG.md](CHANGELOG.md)
-for release notes.
+See also the animated explanations of
+[common problems in curve fitting](https://www.findcurves.com/CommonProblems/),
+and [CHANGELOG.md](CHANGELOG.md) for release notes.
 
 
 ## Maintainer
 
-tkInterFit is maintained by Ross Moffett. Please send questions, comments,
+FindCurves Studio is maintained by Ross Moffett. Please send questions, comments,
 suggestions and bug reports to <findcurves@gmail.com>.
 
-tkInterFit was originally written by James R. Phillips, who is no longer
-maintaining it. His original version, and a wxPython version of this code,
+FindCurves Studio was originally written as tkInterFit by James R. Phillips,
+who is no longer maintaining it. His original version, and a wxPython version of this code,
 are at:
 
 - <https://bitbucket.org/zunzuncode/tkInterFit>
@@ -32,8 +33,9 @@ are at:
 
 ## Windows users: just run the installer
 
-`tkinterFit-<version>-Setup.exe` installs tkinterFit with its own bundled
-copy of Python and every library it needs - nothing else is required.
+`FindCurves-Studio-<version>-Setup.exe` installs FindCurves Studio with its
+own bundled copy of Python and every library it needs - nothing else is
+required. It also upgrades an existing tkInterFit installation.
 
 
 ## Main Window
@@ -48,6 +50,12 @@ collapsible sections - click a section title to show or hide it:
 The fitting target applies to both kinds of fitting. A collapsed section
 shows a short summary, such as the number of data points. The window fits
 the screen and can be resized; the data editor uses any extra space.
+
+Rest the mouse pointer on any control to see a tooltip explaining it; they
+can be turned off in the Help menu. "Getting started", at the top of the
+window and in the Help menu, gives step by step guidance on fitting data
+and judging the results, and links to the animated explanations of common
+curve fitting difficulties.
 
 
 ## Equations
@@ -66,8 +74,12 @@ Some equation types have settings, shown below the equation list:
 - **Rational (2D):** the numerator and denominator terms
 - **Spline:** the smoothing factor and spline order
 - **User Defined Function:** type in a function, such as
-  `a * X + b * exp(c * X)`, using X (and Y) for the data and letters for
-  the coefficients
+  `a * X + b * exp(c * X)`, using X (and Y) for the data, names such as
+  `a`, `b2` or `slope` for the coefficients, `+ - * /`, `**` for powers,
+  parentheses, `pi`, `e`, and these functions: `exp log ln log10 log2 sqrt
+  square pow abs fabs sign sin cos tan arcsin arccos arctan arctan2 hypot
+  deg2rad rad2deg sinh cosh tanh arcsinh arccosh arctanh sinc`. Source
+  code output is available for every function except `arctan2` and `sign`.
 
 
 ## Function Finder
@@ -142,15 +154,15 @@ py -3.14 -m venv .venv
 This installs pyeq3, numpy, scipy, matplotlib and reportlab (reportlab is
 used for creating PDF files of the fitting results).
 
-**Step 3:** Run the tkInterFit example
+**Step 3:** Run FindCurves Studio
 
 ```
-.venv\Scripts\python tkinterFit.py
+.venv\Scripts\python FindCurves.py
 ```
 
 **Step 4:** Celebrate
 
-You are now curve and surface fitting data using tkinter!
+You are now curve and surface fitting your data!
 
 
 ## Building the Windows executable and installer
@@ -162,11 +174,15 @@ powershell -ExecutionPolicy Bypass -File build.ps1
 ```
 
 This creates the virtual environment if needed, builds
-`dist\tkinterFit\tkinterFit.exe` with PyInstaller (`tkinterFit.spec`), and
-then builds `installer\Output\tkinterFit-<version>-Setup.exe` with Inno
-Setup (`installer\tkinterFit.iss`). Update `MyAppVersion` in the .iss file
+`dist\FindCurves\FindCurves.exe` with PyInstaller (`FindCurves.spec`), and
+then builds `installer\Output\FindCurves-Studio-<version>-Setup.exe` with Inno
+Setup (`installer\FindCurves.iss`). Update `MyAppVersion` in the .iss file
 for each release. The macOS and Linux builds read their version number from
 the same place.
+
+The application icon is in the `icons` folder, in the formats each platform
+needs. It is drawn by `branding/MakeIcons.py` - run that again only after
+changing the design. The color scheme is in `Theme.py`.
 
 
 ## Building for macOS
@@ -178,8 +194,8 @@ python-tk@3.14), run:
 bash build-macos.sh
 ```
 
-This builds `dist/tkinterFit.app` and
-`installer/Output/tkinterFit-<version>-macOS-<arch>.dmg`. The app is built
+This builds `dist/FindCurves Studio.app` and
+`installer/Output/FindCurves-Studio-<version>-macOS-<arch>.dmg`. The app is built
 for the Mac it is built on (arm64 for Apple silicon, x86_64 for Intel).
 Without a Developer ID the app is unsigned, and users must right-click it
 and choose Open the first time. To sign and notarize, set
@@ -196,8 +212,8 @@ python3.14-venv and python3.14-tk packages on Debian/Ubuntu), run:
 bash build-linux.sh
 ```
 
-This builds `dist/tkinterFit/tkinterFit` and
-`installer/Output/tkinterFit-<version>-linux-<arch>.tar.gz`. Users extract
+This builds `dist/FindCurves/FindCurves` and
+`installer/Output/FindCurves-Studio-<version>-linux-<arch>.tar.gz`. Users extract
 it and run `./install.sh`, which installs for the current user and adds a
 menu entry (or installs for all users when run with sudo). The program runs
 on distributions with the same or newer glibc than the build machine, so

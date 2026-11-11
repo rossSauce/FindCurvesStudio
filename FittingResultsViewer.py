@@ -8,6 +8,7 @@ import tkinter.scrolledtext as tk_stxt
 from tkinter import filedialog as filedialog
 
 import IndividualReports
+import Tooltips
 import AdditionalInfo
 
 
@@ -199,6 +200,44 @@ class ResultsFrame(tk.Frame):
         buttonSavePDF = tk.Button(fsaveFrame, text="Save To PDF", command=self.createPDF, height=0, width=0)
         buttonSavePDF.pack()
         topLevelNotebook.add(fsaveFrame, text="Save To PDF File")
+        Tooltips.Add(buttonSavePDF, "Save the graphs, reports and source code to a PDF file.")
+
+        sourceCodeTip = ("The fitted equation, with its coefficient values, as a function in this programming "
+                         "language - ready to use in your own programs.")
+        Tooltips.AddToTabTitles(topLevelNotebook, {
+            'Graph Reports': "Graphs of the fitted equation and of its errors.",
+            'Text Reports': "The coefficients, and statistics describing how well the equation fits.",
+            'Source Code': "The fitted equation as code in ten programming languages.",
+            'Additional Information': "About FindCurves Studio and its authors, and useful web links.",
+            "List Of All Standard " + str(dim) + "D Equations": "Every standard equation available, by family.",
+            'Save To PDF File': "Save these results to a PDF file."})
+        Tooltips.AddToTabTitles(nbGraphReports, {
+            'Model With 95% Confidence': "The fitted curve with your data.  It should follow the data, "
+                                         "including between and at the ends of the points.  The dashed lines "
+                                         "show the 95% confidence intervals of the fitted curve.",
+            'Scatter Plot': "Your data points, without the fitted equation.",
+            'Surface Plot': "The fitted surface with your data points.",
+            'Contour Plot': "Contours of the fitted surface, seen from above, with your data points.",
+            'Absolute Error': "The error at each data point: the predicted value minus the actual value.  "
+                              "A good fit shows the errors scattered randomly around zero.  A pattern, such as "
+                              "a curve or a funnel shape, means the equation misses something about the data.",
+            'Absolute Error Histogram': "How many data points have each size of error.  For a good fit with "
+                                        "random measurement errors this is usually roughly bell shaped, "
+                                        "centered on zero.",
+            'Percent Error': "The error at each data point as a percentage of the actual value.  Useful when the "
+                             "data spans a wide range of values.",
+            'Percent Error Histogram': "How many data points have each size of percent error."})
+        Tooltips.AddToTabTitles(nbTextReports, {
+            'Coefficient And Fit Statistics': "How well the equation fits (R-squared, RMSE and more), and for "
+                                              "each coefficient its standard error, t-statistic, p-value and "
+                                              "95% confidence interval.  A standard error that is large compared "
+                                              "with its coefficient means the data cannot pin that coefficient "
+                                              "down - a simpler equation may be better.",
+            'Coefficient Listing': "The fitted coefficient values, with full precision.",
+            'Absolute Error Statistics': "Statistics of the errors: the predicted values minus the actual values.",
+            'Percent Error Statistics': "Statistics of the errors as percentages of the actual values."})
+        Tooltips.AddToTabTitles(nbSourceCodeReports, {title: sourceCodeTip for title in
+            ['C++', 'CSHARP', 'VBA', 'PYTHON', 'JAVA', 'JAVASCRIPT', 'JULIA', 'SCILAB', 'MATLAB', 'FORTRAN90']})
 
 
     def createPDF(self):
@@ -230,7 +269,7 @@ if __name__ == "__main__":
     root = tk.Tk()
     interface = ResultsFrame(root, 'pickledEquationFile')
     interface.pack()
-    root.title("Example tkinterFit -  Fitting Results Viewer")
+    root.title("FindCurves Studio - Fitting Results")
     
     # manually center the application window on the user display
     root.update_idletasks()

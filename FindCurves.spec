@@ -1,13 +1,14 @@
 # -*- mode: python ; coding: utf-8 -*-
-# PyInstaller spec file for tkinterFit.  Build with:
-#   pyinstaller --noconfirm tkinterFit.spec
-# Output: dist\tkinterFit\tkinterFit.exe (plus its supporting files)
+# PyInstaller spec file for FindCurves Studio.  Build with:
+#   pyinstaller --noconfirm FindCurves.spec
+# Output: dist\FindCurves\FindCurves.exe (plus its supporting files)
 
 from PyInstaller.utils.hooks import collect_all
 
 # pyeq3 discovers its equation modules dynamically, so collect all of it.
 # pypdfium2 (PDF graph images) loads its pdfium library at run time.
-datas, binaries, hiddenimports = [('Verses.txt', '.')], [], []  # Verses.txt: PDF report messages
+# Verses.txt: PDF report messages; icons: the window icons and logo
+datas, binaries, hiddenimports = [('Verses.txt', '.'), ('icons', 'icons')], [], []
 for package in ['pyeq3', 'pypdfium2', 'pypdfium2_raw']:
     package_datas, package_binaries, package_hiddenimports = collect_all(package)
     datas += package_datas
@@ -15,7 +16,7 @@ for package in ['pyeq3', 'pypdfium2', 'pypdfium2_raw']:
     hiddenimports += package_hiddenimports
 
 a = Analysis(
-    ['tkinterFit.py'],
+    ['FindCurves.py'],
     pathex=[],
     binaries=binaries,
     datas=datas,
@@ -52,12 +53,13 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='tkinterFit',
+    name='FindCurves',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=False,
     console=False,  # GUI application - no console window
+    icon='icons/FindCurves.ico',  # the program's icon on Windows
 )
 coll = COLLECT(
     exe,
@@ -65,22 +67,23 @@ coll = COLLECT(
     a.datas,
     strip=False,
     upx=False,
-    name='tkinterFit',
+    name='FindCurves',
 )
 
-# macOS only (build-macos.sh): wrap the files in dist/tkinterFit.app
+# macOS only (build-macos.sh): wrap the files in "dist/FindCurves Studio.app"
 import os, re, sys
 if sys.platform == 'darwin':
-    with open(os.path.join(SPECPATH, 'installer', 'tkinterFit.iss')) as f:
+    with open(os.path.join(SPECPATH, 'installer', 'FindCurves.iss')) as f:
         version = re.search(r'#define MyAppVersion "([^"]+)"', f.read()).group(1)
     app = BUNDLE(
         coll,
-        name='tkinterFit.app',
-        icon=None,
-        bundle_identifier='org.tkinterfit.tkinterFit',
+        name='FindCurves Studio.app',
+        icon='icons/FindCurves.icns',
+        bundle_identifier='com.findcurves.studio',
         version=version,
         info_plist={
-            'CFBundleDisplayName': 'tkinterFit',
+            'CFBundleDisplayName': 'FindCurves Studio',
+            'NSRequiresAquaSystemAppearance': False,  # allow dark mode
             'CFBundleShortVersionString': version,
             'NSHighResolutionCapable': True,
             'NSHumanReadableCopyright': 'Copyright (C) 2016 James R. Phillips, (C) 2026 Ross Moffett',

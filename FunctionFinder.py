@@ -16,7 +16,7 @@
 #
 # Note that on Windows the pool worker processes re-import the main script,
 # so the main script must use an "if __name__ == '__main__':" guard and call
-# multiprocessing.freeze_support() (see tkinterFit.py)
+# multiprocessing.freeze_support() (see FindCurves.py)
 
 import itertools, multiprocessing, os, time, warnings
 import numpy

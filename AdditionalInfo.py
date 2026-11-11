@@ -1,9 +1,10 @@
 links = '''
-tkInterFit is maintained by Ross Moffett.
+FindCurves Studio (formerly tkInterFit) is maintained by Ross Moffett.
+Website: https://www.findcurves.com/
 Questions, comments and suggestions: findcurves@gmail.com
 
 URL for animated "Common Problems In Curve Fitting":
-http://zunzun.com/CommonProblems/
+https://www.findcurves.com/CommonProblems/
 
 URL for the original tkInterFit source code by James R. Phillips:
 https://bitbucket.org/zunzuncode/tkInterFit
@@ -20,10 +21,10 @@ https://bitbucket.org/zunzuncode/pyeq3
 '''
 
 author = '''
-tkInterFit is now maintained by Ross Moffett. Please send any questions, \
+FindCurves Studio is maintained by Ross Moffett. Please send any questions, \
 comments or suggestions to findcurves@gmail.com
 
-tkInterFit was originally written by James R. Phillips, who is no longer \
+FindCurves Studio was originally written as tkInterFit by James R. Phillips, who is no longer \
 maintaining it. His history of the program follows.
 
 
@@ -104,7 +105,7 @@ explanatory comments throughout the code.
 James R. Phillips, original author of tkInterFit
 
 
-tkInterFit is now maintained by Ross Moffett. If you have any \
+tkInterFit is now FindCurves Studio, maintained by Ross Moffett. If you have any \
 questions, comments or suggestions please e-mail \
 findcurves@gmail.com
 '''

@@ -1,12 +1,12 @@
-# Builds the tkinterFit Windows executable and installer.
+# Builds the FindCurves Studio Windows executable and installer.
 #
 #   powershell -ExecutionPolicy Bypass -File build.ps1
 #
 # Steps:
 #   1. creates .venv (Python 3.14 via the py launcher) if it does not exist
 #   2. installs requirements.txt and PyInstaller
-#   3. builds dist\tkinterFit\tkinterFit.exe with PyInstaller
-#   4. if Inno Setup 6 is installed, builds installer\Output\tkinterFit-<ver>-Setup.exe
+#   3. builds dist\FindCurves\FindCurves.exe with PyInstaller
+#   4. if Inno Setup 6 is installed, builds installer\Output\FindCurves-Studio-<ver>-Setup.exe
 
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
@@ -21,9 +21,9 @@ $python = Resolve-Path .venv\Scripts\python.exe
 & $python -m pip install -r requirements.txt pyinstaller
 if ($LASTEXITCODE -ne 0) { throw 'pip install failed' }
 
-& $python -m PyInstaller --noconfirm --clean tkinterFit.spec
+& $python -m PyInstaller --noconfirm --clean FindCurves.spec
 if ($LASTEXITCODE -ne 0) { throw 'PyInstaller build failed' }
-Write-Host "Built dist\tkinterFit\tkinterFit.exe"
+Write-Host "Built dist\FindCurves\FindCurves.exe"
 
 $iscc = @(
     "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe",
@@ -32,7 +32,7 @@ $iscc = @(
 ) | Where-Object { Test-Path $_ } | Select-Object -First 1
 
 if ($iscc) {
-    & $iscc installer\tkinterFit.iss
+    & $iscc installer\FindCurves.iss
     if ($LASTEXITCODE -ne 0) { throw 'Inno Setup build failed' }
     Write-Host "Built installer in installer\Output"
 } else {

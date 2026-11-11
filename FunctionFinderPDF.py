@@ -295,7 +295,7 @@ def CreatePDF(fileName, run, includeModelGraphs=True, includeErrorGraphs=False, 
             progressCallback(done, len(results), message)
 
     elements = []
-    elements.append(reportlab.platypus.Paragraph('tkinterFit Function Finder Results', styles['Title']))
+    elements.append(reportlab.platypus.Paragraph('FindCurves Studio Function Finder Results', styles['Title']))
     elements.append(reportlab.platypus.Spacer(1, 12))
 
     if run.cancelled:
@@ -371,5 +371,5 @@ def CreatePDF(fileName, run, includeModelGraphs=True, includeErrorGraphs=False, 
     doc = reportlab.platypus.SimpleDocTemplate(fileName, pagesize=reportlab.lib.pagesizes.letter,
                                                leftMargin=0.6*inch, rightMargin=0.6*inch,
                                                topMargin=0.6*inch, bottomMargin=0.9*inch,
-                                               title='tkinterFit Function Finder Results')
+                                               title='FindCurves Studio Function Finder Results')
     doc.build(elements, canvasmaker=NumberedCanvas)

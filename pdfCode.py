@@ -32,7 +32,7 @@ class NumberedCanvas(canvas.Canvas):
     def draw_page_number(self, page_count):
         self.setFont("Helvetica", 7)
         self.drawRightString(200*mm, 20*mm, "Page %d of %d" % (self._pageNumber, page_count))
-        self.drawString(15*mm, 20*mm, 'tkInterFit - findcurves@gmail.com')
+        self.drawString(15*mm, 20*mm, 'FindCurves Studio - www.findcurves.com - findcurves@gmail.com')
 
 
 
@@ -47,7 +47,7 @@ def CreatePDF(inFileAndPathName, inEquation, inGraphList, inTextList, inSourceCo
     myTableStyle = [('ALIGN', (1,1), (-1,-1), 'CENTER'),
                     ('VALIGN', (1,1), (-1,-1), 'MIDDLE')]
 
-    tableRow = ['tkInterFit'] # originally included images that are now unused
+    tableRow = ['FindCurves Studio'] # originally included images that are now unused
 
     table = reportlab.platypus.Table([tableRow], style=myTableStyle)
 
@@ -68,7 +68,7 @@ def CreatePDF(inFileAndPathName, inEquation, inGraphList, inTextList, inSourceCo
     # make a page for each report output, with report name as page header
     # temporary image files go in a private temp directory, since the
     # current working directory may not be writable (e.g. Program Files)
-    tempDir = tempfile.mkdtemp(prefix='tkinterFit_')
+    tempDir = tempfile.mkdtemp(prefix='FindCurves_')
     filenamePrefix = os.path.join(tempDir, 'temp_')
     index = 1
     for report in inGraphList:

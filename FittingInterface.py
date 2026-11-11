@@ -18,6 +18,9 @@ import ImportDataDialog
 import EquationCatalog
 import EquationSelector
 import CollapsibleSection
+import GettingStarted
+import Tooltips
+import Theme
 
 
 class InterfaceFrame(tk.Frame):
@@ -41,14 +44,38 @@ class InterfaceFrame(tk.Frame):
 
         # 2D and 3D fitting are on separate tabs, each with collapsible
         # sections, so that the window fits on small screens
+        # the top bar: the logo and name, and help
+        helpRow = tk.Frame(self)
+        helpRow.pack(fill=tk.X, padx=8, pady=(6, 0))
+        try:
+            self.logo = Theme.IconImage(24, self)
+            tk.Label(helpRow, image=self.logo).pack(side=tk.LEFT, padx=(0, 6))
+        except tk.TclError:
+            pass # the icon files are missing
+        tk.Label(helpRow, text="FindCurves", font="-size 12 -weight bold").pack(side=tk.LEFT)
+        tk.Label(helpRow, text="Studio", font="-size 12", fg=Theme.accent).pack(side=tk.LEFT, padx=(4, 0))
+        # GettingStarted.AddHelpMenu puts a Help button here on Windows,
+        # where the menu bar cannot be colored to match
+        self.helpButtonArea = tk.Frame(helpRow)
+        self.helpButtonArea.pack(side=tk.RIGHT)
+        link = tk.Label(helpRow, text="Getting started", fg=Theme.link, cursor='hand2', font='-underline 1')
+        link.bind('<Button-1>', lambda e: GettingStarted.GuideWindow(self))
+        link.pack(side=tk.RIGHT, padx=(10, 6))
+        Tooltips.Add(link, "Step by step guidance on fitting your data and judging the results, and common "
+                           "difficulties in curve fitting.")
+        tk.Label(helpRow, text="Hover over any control for help", fg=Theme.muted).pack(side=tk.RIGHT)
+
         self.notebook = ttk.Notebook(self)
-        self.notebook.pack(fill=tk.BOTH, expand=True, padx=6, pady=6)
+        self.notebook.pack(fill=tk.BOTH, expand=True, padx=6, pady=(2, 6))
         for dim, title, exampleText in [(2, "  2D Curve Fitting  ", dfc.exampleText_2D),
                                         (3, "  3D Surface Fitting  ", dfc.exampleText_3D)]:
             tab = tk.Frame(self.notebook, padx=10, pady=8)
             self.notebook.add(tab, text=title)
             self.BuildTab(tab, dim, exampleText)
         self.notebook.bind('<<NotebookTabChanged>>', lambda e: self.OnTabChanged())
+        Tooltips.AddToTabs(self.notebook, [
+            "Fit a curve: one value (Y) that depends on one other value (X).",
+            "Fit a surface: one value (Z) that depends on two other values (X and Y)."])
         self.OnTabChanged()
 
 
@@ -76,7 +103,13 @@ class InterfaceFrame(tk.Frame):
         tab.rowconfigure(0, weight=1)
         section = CollapsibleSection.CollapsibleSection(tab, "%dD Data" % dim, expanded=True, expandBody=True)
         section.grid(row=0, column=0, sticky='nsew')
-        tk.Button(section.headerExtras, text="Import Data...", command=lambda: self.OnImportData(dim)).pack(side=tk.RIGHT)
+        Tooltips.Add(tk.Button(section.headerExtras, text="Import Data...", command=lambda: self.OnImportData(dim)),
+                     "Read data columns from a CSV, text or Excel file%s." % (
+                         ", or digitize the points of a graph from an image" if dim == 2 else "")).pack(side=tk.RIGHT)
+        section.SetTooltip("Your data, one point per line: %s, separated by spaces or tabs.  Type it, paste "
+                           "columns from a spreadsheet, or use Import Data.  Lines without numbers, such as "
+                           "titles, are ignored.  Click here to show or hide the data."
+                           % ("X then Y" if dim == 2 else "X, Y, then Z"))
         text = tk_stxt.ScrolledText(section.body, width=60, height=9, wrap=tk.NONE)
         text.insert(tk.END, exampleText) # inital text data
         text.pack(fill=tk.BOTH, expand=True)
@@ -91,8 +124,16 @@ class InterfaceFrame(tk.Frame):
         # fitting target, used by both single equation fits and the function finder
         row = tk.Frame(tab)
         row.grid(row=1, column=0, sticky='ew', pady=(8, 6))
-        tk.Label(row, text="Fitting target:", font="-weight bold").pack(side=tk.LEFT)
+        targetTip = ("What \"best fit\" means - the fit makes this as small as possible.\n\n"
+                     "Absolute error (SSQABS): ordinary least squares, suits most data.\n"
+                     "Log[Pred/Actual] (LNQREL) and relative error (SSQREL): for data spanning several "
+                     "orders of magnitude, so small values count as much as large ones.\n"
+                     "Orthogonal distance (ODR): when the X values also have measurement errors.\n"
+                     "Akaike Information Criterion (AIC): least squares with a penalty for each "
+                     "coefficient, favoring simpler equations.")
+        Tooltips.Add(tk.Label(row, text="Fitting target:", font="-weight bold"), targetTip).pack(side=tk.LEFT)
         combo = ttk.Combobox(row, state='readonly', width=52, values=dfc.fittingTargetList)
+        Tooltips.Add(combo, targetTip)
         combo.current(0)
         variable = self.fittingTargetSelect_2D if dim == 2 else self.fittingTargetSelect_3D
         combo.bind('<<ComboboxSelected>>', lambda e: variable.set(combo.current()))
@@ -106,6 +147,10 @@ class InterfaceFrame(tk.Frame):
         selector.pack(anchor=tk.W, fill=tk.X)
         self.equationSelector[dim] = selector
         button = tk.Button(section.body, text="Fit %dD Data" % dim, width=16, command=lambda: self.OnFit(dim))
+        Tooltips.Add(button, "Fit the data to the selected equation.  The results window shows the "
+                             "coefficients, graphs, fit statistics and source code.")
+        section.SetTooltip("Fit your data to one equation that you choose.  Click here to show or hide "
+                           "this section.")
         button.pack(anchor=tk.W, pady=(6, 4))
         if dim == 2:
             self.buttonFit_2D = button
@@ -121,12 +166,24 @@ class InterfaceFrame(tk.Frame):
         section.grid(row=3, column=0, sticky='ew', pady=(6, 0))
         f = tk.Frame(section.body)
         f.pack(anchor=tk.W, pady=(0, 4))
-        tk.Label(f, text="Coefficients:").pack(side=tk.LEFT)
-        tk.Spinbox(f, from_=1, to=15, width=3, textvariable=self.maxCoefficients[dim], state='readonly').pack(side=tk.LEFT)
-        tk.Radiobutton(f, text="maximum", variable=self.exactCoefficientCount[dim], value=False).pack(side=tk.LEFT)
-        tk.Radiobutton(f, text="exact", variable=self.exactCoefficientCount[dim], value=True).pack(side=tk.LEFT)
-        tk.Button(f, text="Options...", command=lambda: self.OnFunctionFinderOptions(dim)).pack(side=tk.LEFT, padx=(10, 0))
+        coefficientTip = ("The number of coefficients (fitted constants) in the equations to try.  Fewer "
+                          "coefficients give simpler equations that are less likely to follow the noise "
+                          "in your data; more can fit more closely, but take longer to try.")
+        Tooltips.Add(tk.Label(f, text="Coefficients:"), coefficientTip).pack(side=tk.LEFT)
+        Tooltips.Add(tk.Spinbox(f, from_=1, to=15, width=3, textvariable=self.maxCoefficients[dim], state='readonly'),
+                     coefficientTip).pack(side=tk.LEFT)
+        Tooltips.Add(tk.Radiobutton(f, text="maximum", variable=self.exactCoefficientCount[dim], value=False),
+                     "Try equations with up to this many coefficients.").pack(side=tk.LEFT)
+        Tooltips.Add(tk.Radiobutton(f, text="exact", variable=self.exactCoefficientCount[dim], value=True),
+                     "Try only equations with exactly this many coefficients.").pack(side=tk.LEFT)
+        Tooltips.Add(tk.Button(f, text="Options...", command=lambda: self.OnFunctionFinderOptions(dim)),
+                     "Choose more kinds of equations to try, and see how many will be fitted.  More "
+                     "equations take longer.").pack(side=tk.LEFT, padx=(10, 0))
         b = tk.Button(f, text="Run Function Finder", command=lambda: self.OnFunctionFinder(dim))
+        Tooltips.Add(b, "Fit your data to many equations and rank them, best first.  A good place to "
+                        "start when you do not know which equation to use.")
+        section.SetTooltip("Find the best equations for your data automatically.  Click here to show or "
+                           "hide this section.")
         b.pack(side=tk.LEFT, padx=(6, 0))
         self.buttonFunctionFinder[dim] = b
         section.SetSummary("finds the best fitting equations")
@@ -336,8 +393,8 @@ class InterfaceFrame(tk.Frame):
         self.ffStatus.countLabel.pack(padx=12, anchor=tk.W)
         self.ffStatus.bestLabel = tk.Label(self.ffStatus, text="", anchor=tk.W, width=70)
         self.ffStatus.bestLabel.pack(padx=12, anchor=tk.W)
-        tk.Button(self.ffStatus, text="Cancel (show results so far)",
-                  command=self.OnFunctionFinderCancel).pack(pady=(8, 12))
+        Tooltips.Add(tk.Button(self.ffStatus, text="Cancel (show results so far)", command=self.OnFunctionFinderCancel),
+                     "Stop fitting, and show the equations fitted so far.").pack(pady=(8, 12))
 
         self.ffStatus.update_idletasks()
         width = self.ffStatus.winfo_width()
@@ -391,7 +448,7 @@ class InterfaceFrame(tk.Frame):
 
     def ShowResults(self, equation):
         resultsWindow = tk.Toplevel(self)
-        resultsWindow.title("tkinterFit - Fitting Results Viewer")
+        resultsWindow.title("FindCurves Studio - Fitting Results")
         results = FittingResultsViewer.ResultsFrame(resultsWindow, equation)
         results.pack()
 
@@ -403,6 +460,17 @@ class InterfaceFrame(tk.Frame):
         y = (resultsWindow.winfo_screenheight() // 2) - (height // 2) # integer division
         resultsWindow.geometry('{}x{}+{}+{}'.format(width, height, x, y))
 
+
+
+# tooltips for the extended forms in the function finder options
+formGroupTips = {
+    'RECIPROCAL': "Also try 1 / (the equation): y = 1 / f(x).",
+    'INVERSE': "Also try x / (the equation): y = x / f(x).",
+    'LINEAR_GROWTH': "Also try each equation multiplied by x.",
+    'LINEAR_DECAY': "Also try each equation divided by x.",
+    'EXPONENTIAL_GROWTH': "Also try each equation multiplied by an exponential of x.",
+    'EXPONENTIAL_DECAY': "Also try each equation divided by an exponential of x.",
+}
 
 
 class FunctionFinderOptionsDialog(tk.Toplevel):
@@ -420,11 +488,13 @@ class FunctionFinderOptionsDialog(tk.Toplevel):
 
         tk.Label(self, text="Equations to try:", font="-weight bold").pack(anchor=tk.W, padx=12, pady=(12, 2))
         tk.Label(self, text="Standard forms of every equation: Default, With Offset, and Plus %s (always included)"
-                 % ('Line' if dim == 2 else 'Plane'), fg='gray25').pack(anchor=tk.W, padx=24)
+                 % ('Line' if dim == 2 else 'Plane'), fg=Theme.muted).pack(anchor=tk.W, padx=24)
 
         self.polynomialOrders = tk.BooleanVar(value=options.polynomialOrders)
-        tk.Checkbutton(self, text="Polynomials of every order (up to %d)" % EquationCatalog.maxPolynomialOrder[dim],
-                       variable=self.polynomialOrders, command=self.OnChanged).pack(anchor=tk.W, padx=20)
+        Tooltips.Add(tk.Checkbutton(self, text="Polynomials of every order (up to %d)" % EquationCatalog.maxPolynomialOrder[dim],
+                                    variable=self.polynomialOrders, command=self.OnChanged),
+                     "Also try polynomials, such as a + bx + cx\u00b2, of each order the coefficient "
+                     "limit allows.  These are fast linear fits.").pack(anchor=tk.W, padx=20)
 
         frame = tk.LabelFrame(self, text=" Extended forms of every equation (each also with offset) ")
         frame.pack(fill=tk.X, padx=12, pady=6)
@@ -432,22 +502,27 @@ class FunctionFinderOptionsDialog(tk.Toplevel):
         for index, group in enumerate([g for g in EquationCatalog.formGroups if g != 'STANDARD']):
             variable = tk.BooleanVar(value=group in options.formGroups)
             self.groups[group] = variable
-            tk.Checkbutton(frame, text=EquationCatalog.formGroupLabels[group], variable=variable,
-                           command=self.OnChanged).grid(row=index // 2, column=index % 2, sticky=tk.W, padx=6)
+            Tooltips.Add(tk.Checkbutton(frame, text=EquationCatalog.formGroupLabels[group], variable=variable,
+                                        command=self.OnChanged),
+                         formGroupTips[group]).grid(row=index // 2, column=index % 2, sticky=tk.W, padx=6)
 
         frame = tk.LabelFrame(self, text=" Combinations of functions ")
         frame.pack(fill=tk.X, padx=12, pady=(0, 6))
         self.polyfunctional = tk.BooleanVar(value=options.polyfunctional)
-        tk.Checkbutton(frame, text="Polyfunctional: up to %d terms (sum of squared absolute error fitting target only)"
-                       % FunctionFinder.maxPolyfunctionalTerms[dim],
-                       variable=self.polyfunctional, command=self.OnChanged).pack(anchor=tk.W, padx=6)
+        Tooltips.Add(tk.Checkbutton(frame, text="Polyfunctional: up to %d terms (sum of squared absolute error fitting target only)"
+                                    % FunctionFinder.maxPolyfunctionalTerms[dim],
+                                    variable=self.polyfunctional, command=self.OnChanged),
+                     "Also try sums of simple functions, each with a coefficient, such as "
+                     "a + b\u00b7ln(x) + c\u00b7exp(x).  This adds many equations.").pack(anchor=tk.W, padx=6)
         self.rational = tk.BooleanVar(value=options.rational)
         if dim == 2:
-            tk.Checkbutton(frame, text="Rational: up to %d numerator and %d denominator terms (slow nonlinear fits)"
-                           % (FunctionFinder.maxRationalTermsEach, FunctionFinder.maxRationalTermsEach),
-                           variable=self.rational, command=self.OnChanged).pack(anchor=tk.W, padx=6)
+            Tooltips.Add(tk.Checkbutton(frame, text="Rational: up to %d numerator and %d denominator terms (slow nonlinear fits)"
+                                        % (FunctionFinder.maxRationalTermsEach, FunctionFinder.maxRationalTermsEach),
+                                        variable=self.rational, command=self.OnChanged),
+                         "Also try ratios of sums of simple functions, such as (a + bx) / (1 + cx).  These "
+                         "can fit curves with peaks and asymptotes, but are slow.").pack(anchor=tk.W, padx=6)
 
-        self.countLabel = tk.Label(self, text="", justify=tk.LEFT, fg='#804000')
+        self.countLabel = tk.Label(self, text="", justify=tk.LEFT, fg=Theme.highlight)
         self.countLabel.pack(anchor=tk.W, padx=12, pady=6)
         tk.Button(self, text="Close", width=10, command=self.destroy).pack(pady=(0, 12))
         self.OnChanged()
@@ -488,8 +563,10 @@ def SizeWindowToScreen(root):
 
 if __name__ == "__main__":
     root = tk.Tk()
+    Theme.Apply(root)
     interface = InterfaceFrame(root)
     interface.pack(fill=tk.BOTH, expand=True)
-    root.title("tkinterFit - Curve And Surface Fitting Interface")
+    root.title("FindCurves Studio - Curve And Surface Fitting")
+    GettingStarted.AddHelpMenu(root, interface.helpButtonArea)
     SizeWindowToScreen(root)
     root.mainloop()

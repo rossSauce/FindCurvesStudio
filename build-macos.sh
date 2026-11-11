@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# Builds the tkinterFit macOS application and disk image.
+# Builds the FindCurves Studio macOS application and disk image.
 #
 #   bash build-macos.sh
 #
 # Steps:
 #   1. creates .venv (Python 3.14) if it does not exist
 #   2. installs requirements.txt and PyInstaller
-#   3. builds dist/tkinterFit.app with PyInstaller (tkinterFit.spec)
+#   3. builds "dist/FindCurves Studio.app" with PyInstaller (FindCurves.spec)
 #   4. optionally signs the app with a Developer ID (set CODESIGN_IDENTITY)
-#   5. builds installer/Output/tkinterFit-<ver>-macOS-<arch>.dmg
+#   5. builds installer/Output/FindCurves-Studio-<ver>-macOS-<arch>.dmg
 #   6. optionally notarizes the disk image (set NOTARY_PROFILE)
 #
 # The app is built for the architecture of the Mac running this script
@@ -33,7 +33,7 @@ if [[ "$(uname -s)" != Darwin ]]; then
 fi
 
 PYTHON=${PYTHON:-python3.14}
-VERSION=$(sed -n 's/^#define MyAppVersion "\(.*\)"/\1/p' installer/tkinterFit.iss)
+VERSION=$(sed -n 's/^#define MyAppVersion "\(.*\)"/\1/p' installer/FindCurves.iss)
 ARCH=$(uname -m)
 
 if [[ ! -x .venv/bin/python ]]; then
@@ -55,8 +55,8 @@ fi
 "$python" -m pip install --upgrade pip
 "$python" -m pip install -r requirements.txt pyinstaller
 
-"$python" -m PyInstaller --noconfirm --clean tkinterFit.spec
-APP=dist/tkinterFit.app
+"$python" -m PyInstaller --noconfirm --clean FindCurves.spec
+APP="dist/FindCurves Studio.app"
 echo "Built $APP"
 
 if [[ -n "${CODESIGN_IDENTITY:-}" ]]; then
@@ -67,14 +67,14 @@ if [[ -n "${CODESIGN_IDENTITY:-}" ]]; then
 fi
 
 mkdir -p installer/Output
-DMG="installer/Output/tkinterFit-$VERSION-macOS-$ARCH.dmg"
+DMG="installer/Output/FindCurves-Studio-$VERSION-macOS-$ARCH.dmg"
 STAGING=$(mktemp -d)
 trap 'rm -rf "$STAGING"' EXIT
 cp -R "$APP" "$STAGING/"
 cp LICENSE.md README.md "$STAGING/"
 ln -s /Applications "$STAGING/Applications"
 rm -f "$DMG"
-hdiutil create -volname "tkinterFit $VERSION" -srcfolder "$STAGING" \
+hdiutil create -volname "FindCurves Studio $VERSION" -srcfolder "$STAGING" \
     -fs HFS+ -format UDZO -ov "$DMG"
 
 if [[ -n "${CODESIGN_IDENTITY:-}" ]]; then

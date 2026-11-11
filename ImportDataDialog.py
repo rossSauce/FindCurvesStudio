@@ -10,6 +10,8 @@ from tkinter import messagebox as tk_mbox
 from tkinter import filedialog
 
 import DataImport
+import Tooltips
+import Theme
 
 
 class ImportDataDialog(tk.Toplevel):
@@ -34,12 +36,18 @@ class ImportDataDialog(tk.Toplevel):
         if dim == 2:
             self.imageTab = GraphImageTab(self.notebook)
             self.notebook.add(self.imageTab, text="Digitize Graph Image")
+        Tooltips.AddToTabs(self.notebook, [
+            "Read columns of numbers from a CSV, text or Excel file.",
+            "Read data points from a picture of a graph, such as a scan or a figure from a paper."])
 
         self.replaceFlag = tk.BooleanVar(value=True)
-        tk.Radiobutton(buttonFrame, text="Replace the existing data", variable=self.replaceFlag, value=True).pack(side=tk.LEFT)
-        tk.Radiobutton(buttonFrame, text="Add to the existing data", variable=self.replaceFlag, value=False).pack(side=tk.LEFT)
+        Tooltips.Add(tk.Radiobutton(buttonFrame, text="Replace the existing data", variable=self.replaceFlag, value=True),
+                     "The imported points replace everything in the data area.").pack(side=tk.LEFT)
+        Tooltips.Add(tk.Radiobutton(buttonFrame, text="Add to the existing data", variable=self.replaceFlag, value=False),
+                     "The imported points are added after the data already in the data area.").pack(side=tk.LEFT)
         tk.Button(buttonFrame, text="Cancel", width=10, command=self.destroy).pack(side=tk.RIGHT)
-        tk.Button(buttonFrame, text="Import", width=10, command=self.OnImport).pack(side=tk.RIGHT, padx=6)
+        Tooltips.Add(tk.Button(buttonFrame, text="Import", width=10, command=self.OnImport),
+                     "Put the selected data points in the main window's data area.").pack(side=tk.RIGHT, padx=6)
 
         self.geometry('1000x720' if dim == 2 else '820x560')
         self.minsize(720, 480)
@@ -71,26 +79,33 @@ class SpreadsheetTab(tk.Frame):
 
         top = tk.Frame(self)
         top.pack(fill=tk.X, padx=8, pady=8)
-        tk.Button(top, text="Open File...", command=self.OnOpen).pack(side=tk.LEFT)
-        self.fileLabel = tk.Label(top, text="CSV, text (.csv .txt .tsv .dat) or Excel (.xlsx .xlsm .xls) files", anchor=tk.W, fg='gray30')
+        Tooltips.Add(tk.Button(top, text="Open File...", command=self.OnOpen),
+                     "Choose a CSV, text or Excel file.  Its contents are shown below, so you can choose "
+                     "the columns to import.").pack(side=tk.LEFT)
+        self.fileLabel = tk.Label(top, text="CSV, text (.csv .txt .tsv .dat) or Excel (.xlsx .xlsm .xls) files", anchor=tk.W, fg=Theme.muted)
         self.fileLabel.pack(side=tk.LEFT, padx=8, fill=tk.X, expand=True)
 
         options = tk.Frame(self)
         options.pack(fill=tk.X, padx=8)
-        tk.Label(options, text="Sheet:").pack(side=tk.LEFT)
+        sheetTip = "For Excel files with several worksheets, the worksheet to read."
+        Tooltips.Add(tk.Label(options, text="Sheet:"), sheetTip).pack(side=tk.LEFT)
         self.sheetCombo = ttk.Combobox(options, state='disabled', width=24)
+        Tooltips.Add(self.sheetCombo, sheetTip)
         self.sheetCombo.pack(side=tk.LEFT, padx=(2, 12))
         self.sheetCombo.bind('<<ComboboxSelected>>', lambda e: self.OnSheetChanged())
         self.headerFlag = tk.BooleanVar(value=False)
-        tk.Checkbutton(options, text="First row contains column names", variable=self.headerFlag,
-                       command=self.OnHeaderChanged).pack(side=tk.LEFT)
+        Tooltips.Add(tk.Checkbutton(options, text="First row contains column names", variable=self.headerFlag,
+                                    command=self.OnHeaderChanged),
+                     "Use the first row as names for the columns, rather than as data.").pack(side=tk.LEFT)
 
         columns = tk.Frame(self)
         columns.pack(fill=tk.X, padx=8, pady=6)
         self.columnCombos = []
         for name in self.axisNames:
-            tk.Label(columns, text="%s column:" % name).pack(side=tk.LEFT)
+            columnTip = "The column holding the %s values.  Rows without a number in every chosen column are skipped." % name
+            Tooltips.Add(tk.Label(columns, text="%s column:" % name), columnTip).pack(side=tk.LEFT)
             combo = ttk.Combobox(columns, state='disabled', width=22)
+            Tooltips.Add(combo, columnTip)
             combo.pack(side=tk.LEFT, padx=(2, 12))
             combo.bind('<<ComboboxSelected>>', lambda e: self.UpdateSummary())
             self.columnCombos.append(combo)
@@ -126,7 +141,7 @@ class SpreadsheetTab(tk.Frame):
 
         self.fileName = fileName
         self.tables = tables
-        self.fileLabel.config(text=fileName, fg='black')
+        self.fileLabel.config(text=fileName, fg=Theme.text)
         names = list(tables.keys())
         self.sheetCombo['values'] = names
         # start with the first sheet that has any numbers
@@ -218,7 +233,7 @@ class GraphImageTab(tk.Frame):
     # reference points on each axis and enters their values, then adds data
     # points by clicking, or traces a curve automatically by its color.
 
-    markerColors = {'X': '#0060ff', 'Y': '#00a000'}
+    markerColors = {'X': '#3d8bff', 'Y': '#2fbf4f'} # also the Place buttons' text
     pointColor = '#ff00ff'
 
     def __init__(self, parent):
@@ -239,7 +254,7 @@ class GraphImageTab(tk.Frame):
         # the image canvas, with scroll bars
         canvasFrame = tk.Frame(self)
         canvasFrame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(8, 4), pady=8)
-        self.canvas = tk.Canvas(canvasFrame, background='#d0d0d0', highlightthickness=0, cursor='crosshair')
+        self.canvas = tk.Canvas(canvasFrame, background=Theme.field, highlightthickness=0, cursor='crosshair')
         vbar = ttk.Scrollbar(canvasFrame, orient=tk.VERTICAL, command=self.canvas.yview)
         hbar = ttk.Scrollbar(canvasFrame, orient=tk.HORIZONTAL, command=self.canvas.xview)
         self.canvas.configure(yscrollcommand=vbar.set, xscrollcommand=hbar.set)
@@ -248,7 +263,7 @@ class GraphImageTab(tk.Frame):
         hbar.grid(row=1, column=0, sticky='ew')
         canvasFrame.rowconfigure(0, weight=1)
         canvasFrame.columnconfigure(0, weight=1)
-        self.canvas.create_text(20, 20, anchor=tk.NW, tags='help', fill='gray25',
+        self.canvas.create_text(20, 20, anchor=tk.NW, tags='help', fill=Theme.muted,
                                 text="Open an image of a 2D graph to begin.\n\n"
                                      "Supported formats: PNG, JPG, GIF, BMP, TIFF, WebP,\n"
                                      "and vector graphs in %s." % DataImport.vectorImageFormatNames)
@@ -270,70 +285,94 @@ class GraphImageTab(tk.Frame):
 
         row = tk.Frame(controls)
         row.pack(fill=tk.X)
-        tk.Button(row, text="Open Image...", command=self.OnOpen).pack(side=tk.LEFT)
-        tk.Label(row, text="  Zoom:").pack(side=tk.LEFT)
+        Tooltips.Add(tk.Button(row, text="Open Image...", command=self.OnOpen),
+                     "Open a picture of a graph: PNG, JPG, GIF, BMP, TIFF or WebP, or a vector graph in %s."
+                     % DataImport.vectorImageFormatNames).pack(side=tk.LEFT)
+        zoomTip = "Enlarge the image to place points more accurately.  Fit shows the whole image."
+        Tooltips.Add(tk.Label(row, text="  Zoom:"), zoomTip).pack(side=tk.LEFT)
         self.zoomCombo = ttk.Combobox(row, state='readonly', width=6,
                                       values=['Fit', '50%', '75%', '100%', '150%', '200%', '300%', '400%'])
         self.zoomCombo.set('Fit')
         self.zoomCombo.bind('<<ComboboxSelected>>', lambda e: self.Redraw(rescale=True))
         self.zoomCombo.pack(side=tk.LEFT)
-        self.fileLabel = tk.Label(controls, text="", anchor=tk.W, fg='gray30', wraplength=290, justify=tk.LEFT)
+        Tooltips.Add(self.zoomCombo, zoomTip)
+        self.fileLabel = tk.Label(controls, text="", anchor=tk.W, fg=Theme.muted, wraplength=290, justify=tk.LEFT)
         self.fileLabel.pack(fill=tk.X, pady=(2, 6))
 
         # step 1 - axis calibration
         calibrationFrame = tk.LabelFrame(controls, text=" 1. Calibrate the axes ")
         calibrationFrame.pack(fill=tk.X)
         tk.Label(calibrationFrame, text="Place two points on each axis at known\nvalues (such as tick marks), then enter them.",
-                 justify=tk.LEFT, fg='gray25').grid(row=0, column=0, columnspan=3, sticky=tk.W, padx=4)
+                 justify=tk.LEFT, fg=Theme.muted).grid(row=0, column=0, columnspan=3, sticky=tk.W, padx=4)
         self.valueEntries = {}
         self.placeButtons = {}
         for index, name in enumerate(['X1', 'X2', 'Y1', 'Y2']):
             button = tk.Button(calibrationFrame, text="Place %s" % name, width=9,
                                fg=self.markerColors[name[0]], command=lambda n=name: self.StartPlacing(n))
+            Tooltips.Add(button, "Then click the image at a known %s value, such as a labeled tick mark on the %s "
+                                 "axis.  Use two points far apart for accuracy."
+                                 % (name[0], 'horizontal' if name[0] == 'X' else 'vertical'))
             button.grid(row=index + 1, column=0, padx=4, pady=2, sticky=tk.W)
             self.placeButtons[name] = button
             tk.Label(calibrationFrame, text="%s value:" % name[0]).grid(row=index + 1, column=1, sticky=tk.E)
             entry = tk.Entry(calibrationFrame, width=12)
             entry.grid(row=index + 1, column=2, padx=4, pady=2)
+            Tooltips.Add(entry, "The %s value at the point you placed, as labeled on the graph." % name[0])
             self.valueEntries[name] = entry
         self.logX = tk.BooleanVar(value=False)
         self.logY = tk.BooleanVar(value=False)
-        tk.Checkbutton(calibrationFrame, text="Log X axis", variable=self.logX).grid(row=5, column=0, columnspan=2, sticky=tk.W)
-        tk.Checkbutton(calibrationFrame, text="Log Y axis", variable=self.logY).grid(row=5, column=2, sticky=tk.W)
+        Tooltips.Add(tk.Checkbutton(calibrationFrame, text="Log X axis", variable=self.logX),
+                     "Check this if the X axis has a logarithmic scale, such as 1, 10, 100, 1000 equally "
+                     "spaced.").grid(row=5, column=0, columnspan=2, sticky=tk.W)
+        Tooltips.Add(tk.Checkbutton(calibrationFrame, text="Log Y axis", variable=self.logY),
+                     "Check this if the Y axis has a logarithmic scale, such as 1, 10, 100, 1000 equally "
+                     "spaced.").grid(row=5, column=2, sticky=tk.W)
 
         # step 2 - data points
         pointsFrame = tk.LabelFrame(controls, text=" 2. Add data points ")
         pointsFrame.pack(fill=tk.X, pady=(8, 0))
-        for value, text in [('add', "Click to add points"),
-                            ('delete', "Click or drag a box to delete points"),
-                            ('color', "Click a curve to pick its color"),
-                            ('area', "Drag a box around the area to trace")]:
-            tk.Radiobutton(pointsFrame, text=text, variable=self.mode, value=value,
-                           command=self.OnModeChanged).pack(anchor=tk.W)
+        for value, text, tip in [
+                ('add', "Click to add points", "Click on the image to add a data point at each click."),
+                ('delete', "Click or drag a box to delete points",
+                 "Click a point, or drag a box around several, to delete them."),
+                ('color', "Click a curve to pick its color",
+                 "Click on the curve to trace, so that Trace Curve follows that color."),
+                ('area', "Drag a box around the area to trace",
+                 "Optional: drag a box around the plot area, so that tracing leaves out the legend, labels "
+                 "and other curves of the same color.")]:
+            Tooltips.Add(tk.Radiobutton(pointsFrame, text=text, variable=self.mode, value=value,
+                                        command=self.OnModeChanged), tip).pack(anchor=tk.W)
 
         traceFrame = tk.Frame(pointsFrame)
         traceFrame.pack(fill=tk.X, padx=4, pady=(4, 0))
         tk.Label(traceFrame, text="Curve color:").grid(row=0, column=0, sticky=tk.W)
         self.colorSwatch = tk.Label(traceFrame, text=" none ", relief=tk.SUNKEN, width=8)
         self.colorSwatch.grid(row=0, column=1, sticky=tk.W, padx=4)
-        tk.Label(traceFrame, text="Color tolerance:").grid(row=1, column=0, sticky=tk.W)
+        toleranceTip = ("How different a color can be from the curve's color and still be traced.  Raise it "
+                        "if the trace misses parts of the curve; lower it if it picks up other lines or text.")
+        Tooltips.Add(tk.Label(traceFrame, text="Color tolerance:"), toleranceTip).grid(row=1, column=0, sticky=tk.W)
         self.tolerance = tk.IntVar(value=100)
-        tk.Scale(traceFrame, from_=10, to=250, orient=tk.HORIZONTAL, variable=self.tolerance,
-                 showvalue=True, length=130).grid(row=1, column=1, sticky=tk.W)
-        tk.Label(traceFrame, text="Point spacing (pixels):").grid(row=2, column=0, sticky=tk.W)
+        Tooltips.Add(tk.Scale(traceFrame, from_=10, to=250, orient=tk.HORIZONTAL, variable=self.tolerance,
+                              showvalue=True, length=130), toleranceTip).grid(row=1, column=1, sticky=tk.W)
+        spacingTip = "The distance between traced points along the curve, in image pixels.  Smaller gives more points."
+        Tooltips.Add(tk.Label(traceFrame, text="Point spacing (pixels):"), spacingTip).grid(row=2, column=0, sticky=tk.W)
         self.spacing = tk.IntVar(value=5)
-        tk.Spinbox(traceFrame, from_=1, to=100, width=5, textvariable=self.spacing).grid(row=2, column=1, sticky=tk.W, padx=4)
+        Tooltips.Add(tk.Spinbox(traceFrame, from_=1, to=100, width=5, textvariable=self.spacing),
+                     spacingTip).grid(row=2, column=1, sticky=tk.W, padx=4)
 
         buttons = tk.Frame(pointsFrame)
         buttons.pack(fill=tk.X, padx=4, pady=6)
-        tk.Button(buttons, text="Trace Curve", command=self.OnTrace).pack(side=tk.LEFT)
-        tk.Button(buttons, text="Clear Points", command=self.OnClearPoints).pack(side=tk.LEFT, padx=6)
+        Tooltips.Add(tk.Button(buttons, text="Trace Curve", command=self.OnTrace),
+                     "Add points along the curve of the picked color automatically.  Pick the color "
+                     "first.").pack(side=tk.LEFT)
+        Tooltips.Add(tk.Button(buttons, text="Clear Points", command=self.OnClearPoints),
+                     "Delete all of the data points, keeping the axis calibration.").pack(side=tk.LEFT, padx=6)
 
         self.countLabel = tk.Label(controls, text="No data points", anchor=tk.W)
         self.countLabel.pack(fill=tk.X, pady=(8, 0))
-        self.positionLabel = tk.Label(controls, text="", anchor=tk.W, fg='gray25')
+        self.positionLabel = tk.Label(controls, text="", anchor=tk.W, fg=Theme.muted)
         self.positionLabel.pack(fill=tk.X)
-        self.helpLabel = tk.Label(controls, text="", anchor=tk.W, justify=tk.LEFT, wraplength=290, fg='#804000')
+        self.helpLabel = tk.Label(controls, text="", anchor=tk.W, justify=tk.LEFT, wraplength=290, fg=Theme.highlight)
         self.helpLabel.pack(fill=tk.X, pady=(6, 0))
         self.OnModeChanged()
 

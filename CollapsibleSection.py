@@ -3,6 +3,9 @@
 
 import tkinter as tk
 
+import Tooltips
+import Theme
+
 
 class CollapsibleSection(tk.Frame):
     # Put the section's widgets in self.body.  Extra header widgets, such as
@@ -18,12 +21,15 @@ class CollapsibleSection(tk.Frame):
         self.toggleButton = tk.Label(header, font="-weight bold", cursor='hand2', anchor=tk.W)
         self.toggleButton.pack(side=tk.LEFT)
         self.toggleButton.bind('<Button-1>', lambda e: self.Toggle())
-        self.summaryLabel = tk.Label(header, fg='gray35', anchor=tk.W, cursor='hand2')
+        self.summaryLabel = tk.Label(header, fg=Theme.muted, anchor=tk.W, cursor='hand2')
         self.summaryLabel.pack(side=tk.LEFT, padx=(6, 0))
         self.summaryLabel.bind('<Button-1>', lambda e: self.Toggle())
+        self.tooltip = "Click to show or hide this section."
+        for widget in (self.toggleButton, self.summaryLabel):
+            Tooltips.Tooltip(widget, lambda event: self.tooltip)
         self.headerExtras = tk.Frame(header)
         self.headerExtras.pack(side=tk.RIGHT)
-        tk.Frame(self, height=1, background='gray70').pack(fill=tk.X, pady=(1, 3))
+        tk.Frame(self, height=1, background=Theme.border).pack(fill=tk.X, pady=(1, 3))
 
         self.body = tk.Frame(self)
         self.expanded = not expanded
@@ -40,6 +46,11 @@ class CollapsibleSection(tk.Frame):
         self.UpdateSummaryVisibility()
         # let the parent container recalculate its layout
         self.event_generate('<<SectionToggled>>')
+
+
+    def SetTooltip(self, text):
+        # the tooltip for the section's title
+        self.tooltip = text
 
 
     def SetSummary(self, text):

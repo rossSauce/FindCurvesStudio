@@ -10,6 +10,7 @@ from tkinter import filedialog
 import tkinter.scrolledtext as tk_stxt
 
 import pyeq3
+import Tooltips
 import IndividualReports
 import ReportGraphs
 from FunctionFinderPDF import EquationFamily, FormatNumber
@@ -33,7 +34,7 @@ class FunctionFinderResultsWindow(tk.Toplevel):
         self.run = run
         self.results = run.SortedResults()
         self.showFullResultsCallback = showFullResultsCallback
-        self.title("tkinterFit - %dD Function Finder Results" % run.dim)
+        self.title("FindCurves Studio - %dD Function Finder Results" % run.dim)
 
         targetName = pyeq3.IModel.IModel.fittingTargetDictionary[run.fittingTarget]
         summary = '%dD function finder, fitting target: %s (%s), %d data points, %s %d coefficients.\n' % (
@@ -83,6 +84,21 @@ class FunctionFinderResultsWindow(tk.Toplevel):
         self.sortColumn = 'rank'
         self.sortReverse = False
         self.tree.bind('<<TreeviewSelect>>', self.OnSelect)
+        Tooltips.AddToHeadings(self.tree, {
+            'rank': "The position by the fitting target, best first.  Click any heading to sort by that column.",
+            'equation': "The equation and its form.  Double-click a row to see its graphs and reports.",
+            'family': "The family of equations it belongs to.",
+            'coefs': "The number of coefficients.  When equations fit almost equally well, the one with fewer "
+                     "coefficients is usually the better choice.",
+            'target': "The fitting target value that was made as small as possible - lower is better.  The "
+                      "results are ranked by this.",
+            'r2': "R-squared: the fraction of the variation in the data that the equation explains.  1.0 is a "
+                  "perfect fit.  A high value alone does not make a good fit - check the error graphs too.",
+            'rmse': "Root mean squared error: the typical size of the errors, in the units of your data.  Lower "
+                    "is better.",
+            'aic': "Akaike Information Criterion: compares fits while penalizing extra coefficients.  Lower is "
+                   "better; useful for choosing between simpler and more complicated equations.",
+            'coefficients': "The fitted coefficient values."})
         self.tree.bind('<Double-1>', lambda event: self.OnViewFullResults())
 
         # details for the selected equation
@@ -98,14 +114,20 @@ class FunctionFinderResultsWindow(tk.Toplevel):
         self.buttonView = tk.Button(buttonFrame, text="View Graphs And Reports For Selected Equation",
                                     command=self.OnViewFullResults)
         self.buttonView.pack(side=tk.LEFT)
+        Tooltips.Add(self.buttonView, "Open the complete results for the selected equation: graphs, "
+                                      "statistics and source code.  Or double-click a row.")
+        Tooltips.Add(self.details, "The full details of the selected equation.")
         self.buttonPDF = tk.Button(buttonFrame, text="Save All Results To PDF...", command=self.OnSavePDF)
         self.buttonPDF.pack(side=tk.RIGHT)
+        Tooltips.Add(self.buttonPDF, "Save a PDF report of every listed equation, ranked, with the options on "
+                                     "the left.  With many equations this can take a while.")
         self.includeErrorGraphs = tk.BooleanVar(value=False)
-        tk.Checkbutton(buttonFrame, text="error graphs",
-                       variable=self.includeErrorGraphs).pack(side=tk.RIGHT, padx=(0, 8))
+        Tooltips.Add(tk.Checkbutton(buttonFrame, text="error graphs", variable=self.includeErrorGraphs),
+                     "Include each equation's error graphs in the PDF.  This makes the PDF larger and slower "
+                     "to create.").pack(side=tk.RIGHT, padx=(0, 8))
         self.includeModelGraphs = tk.BooleanVar(value=True)
-        tk.Checkbutton(buttonFrame, text="model graphs",
-                       variable=self.includeModelGraphs).pack(side=tk.RIGHT)
+        Tooltips.Add(tk.Checkbutton(buttonFrame, text="model graphs", variable=self.includeModelGraphs),
+                     "Include a graph of each fitted equation with the data in the PDF.").pack(side=tk.RIGHT)
         tk.Label(buttonFrame, text="Include in PDF:").pack(side=tk.RIGHT)
 
         if self.results:

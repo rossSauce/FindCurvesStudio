@@ -2,7 +2,9 @@
 # Install with:  pip install -r requirements.txt
 pyeq3==12.6.1
 numpy==2.5.4
-# pyeq3 uses scipy.odr, which is deprecated and will be removed in SciPy 1.19
+# pyeq3 uses scipy.odr, which is deprecated and will be removed in SciPy 1.19.
+# FindCurves Studio provides its own (OrthogonalDistanceRegression.py), so later
+# SciPy versions can also be used.
 scipy==1.18.1
 matplotlib==3.11.2
 reportlab==5.1.0

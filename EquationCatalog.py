@@ -20,6 +20,9 @@ import pyeq3
 import pyeq3.ExtendedVersionHandlers.ExtendedVersionHandler_PlusLine
 import pyeq3.DataCache.DataCacheFunctions
 
+import UserFunctions # installs FindCurves Studio's parser for user defined functions
+import OrthogonalDistanceRegression # in place of scipy.odr, which SciPy 1.19 removes
+
 
 def _FixPlusLineHandler():
     # pyeq3 12.6.1 bug: the "Plus Line" extended form uses the X data values
@@ -249,8 +252,8 @@ def _SetDisplayName(equation, kind, params):
             name = 'Spline, X order %s, Y order %s' % (params.get('xOrder', 3), params.get('yOrder', 3))
         name += ', smoothing %s' % ('automatic' if smoothing is None else '%g' % smoothing)
     elif kind == 'userFunction':
-        name = 'User Defined Function: ' + params.get('function', '').strip()
-        functionHTML = html.escape(params.get('function', '').strip())
+        name = 'User Defined Function: ' + equation.userFunctionDisplayText
+        functionHTML = html.escape(equation.userFunctionDisplayText)
         left = 'y' if equation.GetDimensionality() == 2 else 'z'
         equation.GetDisplayHTML = types.MethodType(lambda self: left + ' = ' + functionHTML, equation)
     elif kind == 'polynomialOrder':
